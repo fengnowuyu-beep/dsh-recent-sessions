@@ -42,8 +42,10 @@ function harness() {
     cancelAnimationFrame(id) { frames.delete(id); },
   };
   const source = readFileSync(`${__dirname}/../client.js`, 'utf8');
-  const instrumented = source.replace('      inject,\n      apply,',
-    '      inject,\n      apply,\n      revealOriginalSession,\n      CSS,');
+  const instrumented = source.replace(
+    / {6}inject,\r?\n {6}apply,/,
+    (match) => match.replace('      apply,', '      apply,\n      revealOriginalSession,\n      CSS,'),
+  );
   assert.notEqual(instrumented, source);
   vm.runInNewContext(instrumented, sandbox);
   const plugin = definition.factory((name) => name === 'react' ? { createElement() {} } : {});
@@ -156,7 +158,7 @@ test('plugin unload cancels delayed nested workspace expansion and scrolling', (
     effect: (callback, label) => effects.set(label, callback),
     slots: { inject() {} },
   });
-  const dispose = effects.get('up-session: cancel pending reveal')();
+  const dispose = effects.get('recent-sessions: cancel pending reveal')();
   const delayed = delayedNestedExpansion(state);
   state.plugin.revealOriginalSession(delayed.workspaces, 'target', 'child', 1);
   dispose();
@@ -171,7 +173,7 @@ test('a missing target stops retrying and never collapses expanded overflow', ()
   flush();
 });
 
-function animationEnd(row, name = 'dshUS-revealOriginal') {
+function animationEnd(row, name = 'dshRS-revealOriginal') {
   const event = new Event('animationend');
   event.animationName = name;
   row.dispatchEvent(event);
@@ -184,12 +186,12 @@ test('highlights only the revealed row, then restores it when the pulse finishes
   rows.push(target, other);
   plugin.revealOriginalSession([], 'target', '', 2);
   flush();
-  assert.equal(Object.hasOwn(target.dataset, 'dshUpSessionReveal'), true);
-  assert.equal(Object.hasOwn(other.dataset, 'dshUpSessionReveal'), false);
+  assert.equal(Object.hasOwn(target.dataset, 'dshRecentSessionsReveal'), true);
+  assert.equal(Object.hasOwn(other.dataset, 'dshRecentSessionsReveal'), false);
   animationEnd(target, 'unrelated-host-animation');
-  assert.equal(Object.hasOwn(target.dataset, 'dshUpSessionReveal'), true);
+  assert.equal(Object.hasOwn(target.dataset, 'dshRecentSessionsReveal'), true);
   animationEnd(target);
-  assert.equal(Object.hasOwn(target.dataset, 'dshUpSessionReveal'), false);
+  assert.equal(Object.hasOwn(target.dataset, 'dshRecentSessionsReveal'), false);
 });
 
 test('native className updates leave the active pulse intact', () => {
@@ -200,10 +202,10 @@ test('native className updates leave the active pulse intact', () => {
   flush();
   // React replaces the full class attribute when selection or menu state changes.
   target.className = 'native-session-row native-selected';
-  assert.equal(Object.hasOwn(target.dataset, 'dshUpSessionReveal'), true);
-  assert.match(plugin.CSS, /\[data-dsh-up-session-reveal\]\{animation:dshUS-revealOriginal/);
+  assert.equal(Object.hasOwn(target.dataset, 'dshRecentSessionsReveal'), true);
+  assert.match(plugin.CSS, /\[data-dsh-recent-sessions-reveal\]\{animation:dshRS-revealOriginal/);
   animationEnd(target);
-  assert.equal(Object.hasOwn(target.dataset, 'dshUpSessionReveal'), false);
+  assert.equal(Object.hasOwn(target.dataset, 'dshRecentSessionsReveal'), false);
   assert.equal(target.className, 'native-session-row native-selected');
 });
 
@@ -215,21 +217,21 @@ test('repeated reveals restart the pulse and moving to another row clears the ol
   for (let repeat = 0; repeat < 2; repeat += 1) {
     plugin.revealOriginalSession([], 'first', '', 2);
     flush();
-    assert.equal(Object.hasOwn(first.dataset, 'dshUpSessionReveal'), true);
+    assert.equal(Object.hasOwn(first.dataset, 'dshRecentSessionsReveal'), true);
   }
   plugin.revealOriginalSession([], 'second', '', 2);
   flush();
-  assert.equal(Object.hasOwn(first.dataset, 'dshUpSessionReveal'), false);
-  assert.equal(Object.hasOwn(second.dataset, 'dshUpSessionReveal'), true);
+  assert.equal(Object.hasOwn(first.dataset, 'dshRecentSessionsReveal'), false);
+  assert.equal(Object.hasOwn(second.dataset, 'dshRecentSessionsReveal'), true);
   animationEnd(first);
-  assert.equal(Object.hasOwn(second.dataset, 'dshUpSessionReveal'), true);
+  assert.equal(Object.hasOwn(second.dataset, 'dshRecentSessionsReveal'), true);
   animationEnd(second);
-  assert.equal(Object.hasOwn(second.dataset, 'dshUpSessionReveal'), false);
+  assert.equal(Object.hasOwn(second.dataset, 'dshRecentSessionsReveal'), false);
 });
 
 test('pulse uses the live DSH theme token with a 20% fade in, 40% hold, and 40% fade out over three seconds', () => {
   const { plugin } = harness();
-  assert.match(plugin.CSS, /animation:dshUS-revealOriginal 3s ease-in-out/);
+  assert.match(plugin.CSS, /animation:dshRS-revealOriginal 3s ease-in-out/);
   assert.match(plugin.CSS, /0%,100%\{box-shadow:[^}]+var\(--dsw-alias-brand-primary\) 0%/);
   assert.match(plugin.CSS, /20%,60%\{box-shadow:[^}]+var\(--dsw-alias-brand-primary\) 20%/);
 });
@@ -242,14 +244,14 @@ test('plugin unload removes an active highlight', () => {
     effect: (callback, label) => effects.set(label, callback),
     slots: { inject() {} },
   });
-  const dispose = effects.get('up-session: cancel pending reveal')();
+  const dispose = effects.get('recent-sessions: cancel pending reveal')();
   const target = new Row('session:target');
   rows.push(target);
   plugin.revealOriginalSession([], 'target', '', 1);
   flush();
-  assert.equal(Object.hasOwn(target.dataset, 'dshUpSessionReveal'), true);
+  assert.equal(Object.hasOwn(target.dataset, 'dshRecentSessionsReveal'), true);
   dispose();
-  assert.equal(Object.hasOwn(target.dataset, 'dshUpSessionReveal'), false);
+  assert.equal(Object.hasOwn(target.dataset, 'dshRecentSessionsReveal'), false);
 });
 
 test('menu contribution is limited to section targets and follows file-manager action', () => {
@@ -262,7 +264,7 @@ test('menu contribution is limited to section targets and follows file-manager a
     slots: { inject() {} },
     contextMenus: { register(value) { menu = value; } },
   });
-  effects.get('up-session: reveal original menu action')();
+  effects.get('recent-sessions: reveal original menu action')();
   assert.equal(menu.target, 'session');
   assert.ok(menu.order > 500 && menu.order < 600);
   assert.equal(menu.resolve({ sessionId: 'native' }).length, 0);

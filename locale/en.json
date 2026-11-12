@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "dsh-up-session",
-    "description": "Adds pinned and recent groups at the top of the workspace list in the sidebar, gathering pinned and recent sessions. Rows open the same context menu as the workspace list, and each group header has a settings popup."
+    "title": "dsh-recent-sessions",
+    "description": "Adds a collapsible Recent group at the top of the workspace list in the sidebar, gathering recent sessions across workspaces with status marks, a hover card, show-more, a time filter, hide-from-Recent, and a settings popup."
   }
 }

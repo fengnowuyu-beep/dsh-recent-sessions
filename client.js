@@ -1,34 +1,28 @@
 window.__ModuleLoader__.load({
-  id: 'dsh-up-session',
+  id: 'dsh-recent-sessions',
   factory(require) {
     const React = require('react');
     const { createPortal } = require('react-dom');
     const h = React.createElement;
 
     /** Dictionary namespace owned by this plugin. */
-    const NS = 'upSession';
-    /** Services required to read pin state, render, pin, unpin, archive, and open the host session menu. */
+    const NS = 'recentSessions';
+    /** Services required to render the section, archive sessions, and open the host session menu. */
     const inject = ['slots', 'locale', 'uiWorkspace', 'contextMenus'];
 
     /** Simplified Chinese dictionary and key source of truth. */
     const zh = {
-      section: '置顶',
       recent: '最近',
-      expand: '展开置顶会话',
-      collapse: '收起置顶会话',
       recentExpand: '展开最近会话',
       recentCollapse: '收起最近会话',
-      empty: '无置顶会话',
       recentEmpty: '无最近会话',
       showMore: '展开更多',
       showLess: '收起',
       settings: '设置',
       settingsTitle: '设置',
       settingsOpen: '打开设置',
-      settingsEntryDesc: '管理列表显示、最近区展示数量与时间过滤，以及打开会话时的工作区展开行为。',
+      settingsEntryDesc: '管理最近区展示数量与时间过滤，以及打开会话时的工作区展开行为。',
       settingsClose: '关闭设置',
-      settingsShowPinned: '显示置顶',
-      settingsShowPinnedDesc: '在侧边栏显示置顶会话列表。',
       settingsShowRecent: '显示最近',
       settingsShowRecentDesc: '在侧边栏显示最近会话列表。',
       settingsRecentPageSize: '最近区默认展示的会话数',
@@ -41,13 +35,8 @@ window.__ModuleLoader__.load({
         '仅显示最近更新距今未满指定天数的会话。默认 7 天，可填 0–99 的整数；0 表示不过滤。',
       settingsExpandWorkspace: '展开工作区中的原会话',
       settingsExpandWorkspaceDesc:
-        '从置顶或最近区打开会话时，同时展开它在工作区列表中的位置。关闭后只打开会话，不改变工作区的展开状态。',
+        '从最近区打开会话时，同时展开它在工作区列表中的位置。关闭后只打开会话，不改变工作区的展开状态。',
       untitled: '未命名',
-      pin: '置顶',
-      pinned: '已置顶',
-      pinNamed: '置顶 {title}',
-      unpin: '取消置顶',
-      unpinNamed: '取消置顶 {title}',
       archive: '归档会话',
       archiveNamed: '归档 {title}',
       mute: '从最近隐藏',
@@ -74,7 +63,7 @@ window.__ModuleLoader__.load({
       'status.subagents.other': '{n} 个子智能体运行中',
       'archiveConfirm.title': '停止并归档此会话？',
       'archiveConfirm.desc':
-        '“{title}”仍有正在进行的工作。归档会先停止这些工作并同时取消置顶；之后可在侧栏“全部对话（显示已归档）”中恢复会话，但被停止的工作不会继续，置顶也不会恢复。',
+        '“{title}”仍有正在进行的工作。归档会先停止这些工作；之后可在侧栏“全部对话（显示已归档）”中恢复会话，但被停止的工作不会继续。',
       'archiveConfirm.activity': '将被停止的工作',
       'archiveConfirm.turn': '进行中的回合',
       'archiveConfirm.subagents.one': '{n} 个运行中的子智能体：{names}',
@@ -100,13 +89,9 @@ window.__ModuleLoader__.load({
     };
     /** English dictionary checked against the Chinese key set. */
     const en = {
-      section: 'Pinned',
       recent: 'Recent',
-      expand: 'Expand pinned sessions',
-      collapse: 'Collapse pinned sessions',
       recentExpand: 'Expand recent sessions',
       recentCollapse: 'Collapse recent sessions',
-      empty: 'No pinned sessions',
       recentEmpty: 'No recent sessions',
       showMore: 'Show more',
       showLess: 'Show less',
@@ -114,10 +99,8 @@ window.__ModuleLoader__.load({
       settingsTitle: 'Settings',
       settingsOpen: 'Open settings',
       settingsEntryDesc:
-        'Manage list visibility, the session count and time filter for Recent, and workspace expansion when opening sessions.',
+        'Manage the session count and time filter for Recent, and workspace expansion when opening sessions.',
       settingsClose: 'Close settings',
-      settingsShowPinned: 'Show Pinned',
-      settingsShowPinnedDesc: 'Show the pinned session list in the sidebar.',
       settingsShowRecent: 'Show Recent',
       settingsShowRecentDesc: 'Show the recent session list in the sidebar.',
       settingsRecentPageSize: 'Sessions shown in Recent',
@@ -130,13 +113,8 @@ window.__ModuleLoader__.load({
         'Only show sessions updated less than this many days ago. Defaults to 7 days. Accepts integers from 0 to 99; 0 disables the filter.',
       settingsExpandWorkspace: 'Reveal the session in its workspace',
       settingsExpandWorkspaceDesc:
-        'When you open a session from Pinned or Recent, also expand its workspace in the sidebar. Turn this off to open the session without changing which workspaces are expanded.',
+        'When you open a session from Recent, also expand its workspace in the sidebar. Turn this off to open the session without changing which workspaces are expanded.',
       untitled: 'Untitled',
-      pin: 'Pin',
-      pinned: 'Pinned',
-      pinNamed: 'Pin {title}',
-      unpin: 'Unpin',
-      unpinNamed: 'Unpin {title}',
       archive: 'Archive session',
       archiveNamed: 'Archive {title}',
       mute: 'Hide from Recent',
@@ -163,7 +141,7 @@ window.__ModuleLoader__.load({
       'status.subagents.other': '{n} subagents running',
       'archiveConfirm.title': 'Stop and archive this session?',
       'archiveConfirm.desc':
-        '“{title}” still has work in progress. Archiving stops it first and also unpins the session; you can restore the session later from the “All conversations (show archived)” filter in the sidebar, but the stopped work will not resume and the pin will not come back.',
+        '“{title}” still has work in progress. Archiving stops it first; you can restore the session later from the “All conversations (show archived)” filter in the sidebar, but the stopped work will not resume.',
       'archiveConfirm.activity': 'Work that will be stopped',
       'archiveConfirm.turn': 'The turn in progress',
       'archiveConfirm.subagents.one': '{n} running subagent: {names}',
@@ -194,136 +172,127 @@ window.__ModuleLoader__.load({
       // replacing the host's selected/hover background or changing its layout.
       // Resolve the theme token in CSS, so theme changes also affect an active pulse.
       // Fade in for 0.6s, hold peak intensity for 1.2s, then fade out for 1.2s.
-      '[data-dsh-up-session-reveal]{animation:dshUS-revealOriginal 3s ease-in-out}',
-      '@keyframes dshUS-revealOriginal{',
+      '[data-dsh-recent-sessions-reveal]{animation:dshRS-revealOriginal 3s ease-in-out}',
+      '@keyframes dshRS-revealOriginal{',
       '0%,100%{box-shadow:inset 0 0 0 100vmax color-mix(in srgb,var(--dsw-alias-brand-primary) 0%,transparent)}',
       '20%,60%{box-shadow:inset 0 0 0 100vmax color-mix(in srgb,var(--dsw-alias-brand-primary) 20%,transparent)}}',
       // Right edge is measured at runtime from a native session row (see
       // alignToNativeRows): arithmetic on the host's padding chain got this wrong
       // twice, so the section copies the real geometry instead of predicting it.
-      '.dshUS-mount{box-sizing:border-box;flex:none;display:flex;flex-direction:column;gap:4px;',
+      '.dshRS-mount{box-sizing:border-box;flex:none;display:flex;flex-direction:column;gap:4px;',
       'padding-left:4px;margin:0 0 4px -4px}',
-      '.dshUS-mount[data-rail="true"],.dshUS-mount[data-searching="true"]{display:none}',
-      '.dshUS-root{box-sizing:border-box;display:flex;flex-direction:column;gap:2px;',
-      '--dshUS-status-width:16px}',
+      '.dshRS-mount[data-rail="true"],.dshRS-mount[data-searching="true"]{display:none}',
+      '.dshRS-root{box-sizing:border-box;display:flex;flex-direction:column;gap:2px;',
+      '--dshRS-status-width:16px}',
       // The header copies the host's "Workspaces" section header: same box, same
       // 14px/20px label, same tertiary label colour. The whole row is the toggle,
       // and the settings entry floats over its right edge without taking space,
       // so revealing it on hover never shifts the label or the chevron.
-      '.dshUS-headerRow{box-sizing:border-box;position:relative;display:flex;align-items:center;',
+      '.dshRS-headerRow{box-sizing:border-box;position:relative;display:flex;align-items:center;',
       'height:36px;margin:0 0 4px}',
-      '.dshUS-header{box-sizing:border-box;display:flex;align-items:center;gap:4px;width:100%;',
+      '.dshRS-header{box-sizing:border-box;display:flex;align-items:center;gap:4px;width:100%;',
       // The mount's left edge matches the native header's. DSH uses the sidebar
       // row padding for that header and shifts its label 1px back to the left.
       'height:100%;margin:0;padding:0 4px 0 calc(var(--dsh-sidebar-row-padding,5px) - 1px);',
       'border:0;background:0 0;font:inherit;',
       'text-align:left;color:var(--dsw-alias-label-tertiary);font-size:14px;line-height:20px;',
       'overflow:hidden;user-select:none;cursor:pointer;border-radius:var(--dsw-radius-sm,4px)}',
-      '.dshUS-header:hover,',
-      '.dshUS-headerRow:hover .dshUS-header{color:var(--dsw-alias-label-secondary)}',
-      '.dshUS-header:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid ',
+      '.dshRS-header:hover,',
+      '.dshRS-headerRow:hover .dshRS-header{color:var(--dsw-alias-label-secondary)}',
+      '.dshRS-header:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid ',
       'var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary,#4d6bfe));outline-offset:-2px}',
       // The section's settings entry: the host's own gear, kept out of the way
       // until the header row is hovered or holds keyboard focus. It floats over
       // the header's empty right side, so the header keeps its full hit area and
       // nothing reflows when it appears. A touch surface never hovers, so there
       // it stays visible, exactly as the row actions do.
-      '.dshUS-settingsButton{box-sizing:border-box;position:absolute;top:50%;right:4px;',
+      '.dshRS-settingsButton{box-sizing:border-box;position:absolute;top:50%;right:4px;',
       'z-index:1;transform:translateY(-50%);display:inline-flex;align-items:center;justify-content:center;',
       'width:24px;height:24px;padding:0;border:0;border-radius:var(--dsw-radius-sm,4px);',
       'background:0 0;cursor:pointer;color:var(--dsw-alias-label-tertiary);',
       'visibility:hidden;opacity:0;transition:opacity .12s var(--ds-ease-in-out)}',
-      '.dshUS-headerRow:hover .dshUS-settingsButton,',
-      '.dshUS-header:focus-visible + .dshUS-settingsButton,',
-      '.dshUS-settingsButton:focus-visible{visibility:visible;opacity:1}',
-      '.dshUS-settingsButton:hover{background:var(--dsw-alias-interactive-bg-hover);',
+      '.dshRS-headerRow:hover .dshRS-settingsButton,',
+      '.dshRS-header:focus-visible + .dshRS-settingsButton,',
+      '.dshRS-settingsButton:focus-visible{visibility:visible;opacity:1}',
+      '.dshRS-settingsButton:hover{background:var(--dsw-alias-interactive-bg-hover);',
       'color:var(--dsw-alias-label-primary)}',
-      '.dshUS-settingsButton:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid ',
+      '.dshRS-settingsButton:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid ',
       'var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary,#4d6bfe));outline-offset:1px}',
-      '@media (prefers-reduced-motion:reduce){.dshUS-settingsButton{transition:none}}',
-      '@media (hover:none){.dshUS-settingsButton{visibility:visible;opacity:1}}',
-      '.dshUS-label{flex:none;min-width:0;overflow:hidden;text-overflow:ellipsis;',
+      '@media (prefers-reduced-motion:reduce){.dshRS-settingsButton{transition:none}}',
+      '@media (hover:none){.dshRS-settingsButton{visibility:visible;opacity:1}}',
+      '.dshRS-label{flex:none;min-width:0;overflow:hidden;text-overflow:ellipsis;',
       'white-space:nowrap}',
       // A V-shaped chevron: points down when expanded, back right when collapsed,
       // rotating on the host's own easing curve.
-      '.dshUS-arrow{flex:none;display:inline-flex;align-items:center;justify-content:center;',
+      '.dshRS-arrow{flex:none;display:inline-flex;align-items:center;justify-content:center;',
       'color:var(--dsw-alias-label-caption,currentColor);',
       'transition:transform .15s var(--ds-ease-in-out);transform:rotate(0deg)}',
-      '.dshUS-arrow[data-open="false"]{transform:rotate(-90deg)}',
-      '@media (prefers-reduced-motion:reduce){.dshUS-arrow{transition:none}}',
+      '.dshRS-arrow[data-open="false"]{transform:rotate(-90deg)}',
+      '@media (prefers-reduced-motion:reduce){.dshRS-arrow{transition:none}}',
       // Like a top-level native session row, the title starts after the sidebar
       // row inset, a reserved status slot, and the sidebar label gap.
-      '.dshUS-row{box-sizing:border-box;display:flex;align-items:center;gap:0;height:32px;',
+      '.dshRS-row{box-sizing:border-box;display:flex;align-items:center;gap:0;height:32px;',
       'padding:0 8px 0 var(--dsh-sidebar-row-padding,12px);',
       'border-radius:var(--dsw-radius-md,8px);cursor:pointer;font:inherit;',
       'font-size:14px;line-height:20px;color:var(--dsw-alias-label-primary);background:0 0;',
       'border:0;text-align:left;width:100%}',
-      '.dshUS-row:hover{background:var(--dsw-alias-interactive-bg-hover)}',
+      '.dshRS-row:hover{background:var(--dsw-alias-interactive-bg-hover)}',
       // Matches the sidebar's own selected row (same surface, same label weight).
-      '.dshUS-current,.dshUS-menuOpen{background:var(--dsw-alias-interactive-bg-hover);',
+      '.dshRS-current,.dshRS-menuOpen{background:var(--dsw-alias-interactive-bg-hover);',
       'color:var(--dsw-alias-label-primary)}',
-      '.dshUS-row:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid ',
+      '.dshRS-row:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid ',
       'var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary,#4d6bfe));outline-offset:-2px}',
-      '.dshUS-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;',
+      '.dshRS-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;',
       'margin:0 6px 0 var(--dsh-sidebar-label-gap,6px);font-size:14px;line-height:20px}',
       // Reserve the same space on idle rows so the title stays put as status changes.
-      '.dshUS-status{flex:none;display:inline-flex;align-items:center;justify-content:center;',
-      'width:var(--dshUS-status-width);height:20px;color:var(--dsw-alias-label-tertiary)}',
+      '.dshRS-status{flex:none;display:inline-flex;align-items:center;justify-content:center;',
+      'width:var(--dshRS-status-width);height:20px;color:var(--dsw-alias-label-tertiary)}',
       // The host's ongoing loader: a 14px ring whose arc sweeps while the
       // Session runs, drawn with the primitives' own stroke recipe and easing
       // so both rows animate identically.
-      '.dshUS-spinner{flex:none;color:var(--dsw-alias-label-tertiary)}',
-      '.dshUS-spinnerMotion{transform-origin:center;animation:dshUS-spin 1.5s linear infinite}',
-      '.dshUS-spinnerTrack,.dshUS-spinnerArc{fill:none;stroke:currentColor;stroke-width:2;',
+      '.dshRS-spinner{flex:none;color:var(--dsw-alias-label-tertiary)}',
+      '.dshRS-spinnerMotion{transform-origin:center;animation:dshRS-spin 1.5s linear infinite}',
+      '.dshRS-spinnerTrack,.dshRS-spinnerArc{fill:none;stroke:currentColor;stroke-width:2;',
       'stroke-linecap:round}',
-      '.dshUS-spinnerTrack{opacity:.25}',
-      '.dshUS-spinnerArc{stroke-dasharray:12 150;animation:dshUS-dash 1.5s ease-in-out infinite}',
-      '@keyframes dshUS-spin{to{transform:rotate(360deg)}}',
-      '@keyframes dshUS-dash{0%{stroke-dasharray:12 150;stroke-dashoffset:0}',
+      '.dshRS-spinnerTrack{opacity:.25}',
+      '.dshRS-spinnerArc{stroke-dasharray:12 150;animation:dshRS-dash 1.5s ease-in-out infinite}',
+      '@keyframes dshRS-spin{to{transform:rotate(360deg)}}',
+      '@keyframes dshRS-dash{0%{stroke-dasharray:12 150;stroke-dashoffset:0}',
       '50%{stroke-dasharray:24 150;stroke-dashoffset:-6}',
       'to{stroke-dasharray:12 150;stroke-dashoffset:0}}',
       // A status dot is the host's 10px box with a 20% inset circle inside it, so
       // the mark itself is 6px: done is the success green, a pending interaction
       // the warning amber, exactly the colours the sidebar's own StateDot paints.
-      '.dshUS-dot{position:relative;display:inline-block;flex:none;width:10px;height:10px}',
-      '.dshUS-dot:after{content:"";position:absolute;inset:20%;border-radius:50%;',
+      '.dshRS-dot{position:relative;display:inline-block;flex:none;width:10px;height:10px}',
+      '.dshRS-dot:after{content:"";position:absolute;inset:20%;border-radius:50%;',
       'corner-shape:round;background:currentColor}',
-      '.dshUS-dot[data-state="done"]{color:var(--dsw-alias-state-success-primary)}',
-      '.dshUS-dot[data-state="warning"]{color:var(--dsw-alias-state-warn-primary)}',
-      '.dshUS-dot[data-state="idle"]{color:var(--dsw-alias-state-idle-primary)}',
-      '@media (prefers-reduced-motion:reduce){.dshUS-spinnerMotion,.dshUS-spinnerArc{animation:none}',
-      '.dshUS-spinnerArc{stroke-dasharray:18 150;stroke-dashoffset:-3}}',
-      '.dshUS-time{flex:none;margin:0;color:var(--dsw-alias-label-tertiary);font-size:10px;',
+      '.dshRS-dot[data-state="done"]{color:var(--dsw-alias-state-success-primary)}',
+      '.dshRS-dot[data-state="warning"]{color:var(--dsw-alias-state-warn-primary)}',
+      '.dshRS-dot[data-state="idle"]{color:var(--dsw-alias-state-idle-primary)}',
+      '@media (prefers-reduced-motion:reduce){.dshRS-spinnerMotion,.dshRS-spinnerArc{animation:none}',
+      '.dshRS-spinnerArc{stroke-dasharray:18 150;stroke-dashoffset:-3}}',
+      '.dshRS-time{flex:none;margin:0;color:var(--dsw-alias-label-tertiary);font-size:10px;',
       'line-height:16px}',
       // The hover card copies the host's own Session hover card: a fixed 244px
       // dark surface hanging to the right of the row, with the same 14px title
       // and 12px details. Its colors are the host card's fixed ones rather than
       // theme tokens, because the card is dark in every theme. It takes pointer
       // events like the host's card, so moving onto it keeps it open to read.
-      '.dshUS-hoverCard{position:fixed;z-index:100;box-sizing:border-box;width:244px;',
+      '.dshRS-hoverCard{position:fixed;z-index:100;box-sizing:border-box;width:244px;',
       'max-width:calc(100vw - 16px);padding:12px 16px;',
       'border-radius:var(--dsw-radius-lg,8px);background:#2c2c2e;',
       'box-shadow:var(--dsw-shadow-lv3,0 8px 32px rgba(0,0,0,.24));',
       'display:flex;flex-direction:column;gap:8px}',
-      '.dshUS-hoverTitle{color:#fff;overflow-wrap:break-word;font-size:14px;line-height:20px}',
+      '.dshRS-hoverTitle{color:#fff;overflow-wrap:break-word;font-size:14px;line-height:20px}',
       // The one field these sections add to the host card: the Workspace that
       // owns the Session, named by its (renamable) title rather than its folder.
       // It carries no label; the bare title reads as the Session's context.
-      '.dshUS-hoverWorkspace{color:#cfd3d6;overflow-wrap:anywhere;font-size:12px;line-height:16px;min-height:16px}',
-      '.dshUS-hoverWorkspaceMissing{color:#a1a5a9}',
-      '.dshUS-hoverPath{color:#cfd3d6;word-break:break-all;font-size:12px;line-height:16px}',
-      '.dshUS-hoverTime{color:#cfd3d6;font-size:12px;line-height:16px}',
-      '.dshUS-hoverStatus{display:flex;align-items:center;gap:8px;color:#adb2b8;',
+      '.dshRS-hoverWorkspace{color:#cfd3d6;overflow-wrap:anywhere;font-size:12px;line-height:16px;min-height:16px}',
+      '.dshRS-hoverWorkspaceMissing{color:#a1a5a9}',
+      '.dshRS-hoverPath{color:#cfd3d6;word-break:break-all;font-size:12px;line-height:16px}',
+      '.dshRS-hoverTime{color:#cfd3d6;font-size:12px;line-height:16px}',
+      '.dshRS-hoverStatus{display:flex;align-items:center;gap:8px;color:#adb2b8;',
       'font-size:12px;line-height:20px}',
-      // The host's own pinned marker, kept on the row at rest exactly as the
-      // sidebar keeps its marker on a pinned Session: same 16px box, same 6px
-      // lead, same caption colour. It is the trailing cell of a pinned row, so
-      // the title is measured against it even while the actions are hidden —
-      // dropping it would widen the title past the sidebar's and hide the
-      // ellipsis the sidebar draws. Hovering swaps it for the row's actions,
-      // the way the sidebar swaps its marker for its menu.
-      '.dshUS-pinMark{flex:none;display:inline-flex;align-items:center;justify-content:center;',
-      'width:16px;height:20px;margin-left:6px;color:var(--dsw-alias-label-caption,currentColor)}',
       // The row's trailing actions sit in one group that swallows clicks, so a
       // button press never also opens the row (the host's rows do the same).
       // The group hides as a whole rather than each button: `display:none`
@@ -331,210 +300,175 @@ window.__ModuleLoader__.load({
       // ends with the time flush against the row edge, as the host's own rows
       // do. Showing the group on the row's focus is what keeps its buttons
       // reachable, since a `display:none` button cannot be tabbed to.
-      '.dshUS-actions{flex:none;display:none;align-items:center;gap:8px;margin-left:6px}',
+      '.dshRS-actions{flex:none;display:none;align-items:center;gap:8px;margin-left:6px}',
       // Placeholder that fills the row the section would otherwise not draw.
       // It spans space without any hover surface, so nothing looks clickable:
       // the title keeps the native row's indent and the text stays at the
       // sidebar's tertiary label colour.
-      '.dshUS-empty{box-sizing:border-box;display:flex;align-items:center;height:32px;',
+      '.dshRS-empty{box-sizing:border-box;display:flex;align-items:center;height:32px;',
       'padding:0 8px;cursor:default}',
-      '.dshUS-emptyLabel{flex:1;min-width:0;margin:0 6px 0;overflow:hidden;',
+      '.dshRS-emptyLabel{flex:1;min-width:0;margin:0 6px 0;overflow:hidden;',
       'text-overflow:ellipsis;white-space:nowrap;font-size:14px;line-height:20px;',
       'color:var(--dsw-alias-label-tertiary)}',
       // The host's own "Show more" row: one full-width 28px text button whose
       // label lines up with the Session titles above it.
-      '.dshUS-more{box-sizing:border-box;display:block;width:100%;height:28px;margin:0;',
+      '.dshRS-more{box-sizing:border-box;display:block;width:100%;height:28px;margin:0;',
       'padding:0 12px;border:0;border-radius:var(--dsw-radius-sm,4px);background:0 0;font:inherit;',
       'font-size:12px;line-height:18px;text-align:left;color:var(--dsw-alias-label-tertiary);',
       'cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
-      '.dshUS-empty,.dshUS-more{padding-left:calc(var(--dsh-sidebar-row-padding,12px) + ',
-      'var(--dshUS-status-width) + var(--dsh-sidebar-label-gap,6px))}',
-      '.dshUS-more:hover{color:var(--dsw-alias-label-secondary)}',
-      '.dshUS-more:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid ',
+      '.dshRS-empty,.dshRS-more{padding-left:calc(var(--dsh-sidebar-row-padding,12px) + ',
+      'var(--dshRS-status-width) + var(--dsh-sidebar-label-gap,6px))}',
+      '.dshRS-more:hover{color:var(--dsw-alias-label-secondary)}',
+      '.dshRS-more:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid ',
       'var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary,#4d6bfe));outline-offset:-2px}',
       // A row's actions stay out of its resting state and appear on hover or
       // once the row holds keyboard focus, the way the host's own session rows
       // reveal theirs. `:focus-within` is what keeps them reachable: the group
       // cannot be tabbed into while `display:none`, and this rule holds it
       // visible from the row's own focus all the way onto the buttons.
-      '.dshUS-action{box-sizing:border-box;flex:none;display:inline-flex;align-items:center;',
+      '.dshRS-action{box-sizing:border-box;flex:none;display:inline-flex;align-items:center;',
       'justify-content:center;width:16px;height:20px;padding:0;border:0;cursor:pointer;',
       'border-radius:var(--dsw-radius-xs,2px);background:0 0;',
       'color:var(--dsw-alias-label-caption,currentColor)}',
-      '.dshUS-row:hover .dshUS-actions,',
-      '.dshUS-row:focus-visible .dshUS-actions,',
-      '.dshUS-row:focus-within .dshUS-actions,',
-      '.dshUS-menuOpen .dshUS-actions{display:inline-flex}',
-      '.dshUS-action:hover{color:var(--dsw-alias-label-primary)}',
-      '.dshUS-action:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid ',
+      '.dshRS-row:hover .dshRS-actions,',
+      '.dshRS-row:focus-visible .dshRS-actions,',
+      '.dshRS-row:focus-within .dshRS-actions,',
+      '.dshRS-menuOpen .dshRS-actions{display:inline-flex}',
+      '.dshRS-action:hover{color:var(--dsw-alias-label-primary)}',
+      '.dshRS-action:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid ',
       'var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary,#4d6bfe));outline-offset:1px}',
-      // The relative time and the pinned marker are what the actions replace, so
-      // they go away under exactly the conditions that bring the actions in —
-      // the host's session rows drop their time and pin marker on hover for the
-      // same reason. With both gone the actions keep the row's trailing edge.
-      '.dshUS-row:hover .dshUS-time,',
-      '.dshUS-row:focus-visible .dshUS-time,',
-      '.dshUS-row:focus-within .dshUS-time,',
-      '.dshUS-row:hover .dshUS-pinMark,',
-      '.dshUS-row:focus-visible .dshUS-pinMark,',
-      '.dshUS-row:focus-within .dshUS-pinMark,',
-      '.dshUS-menuOpen .dshUS-time,',
-      '.dshUS-menuOpen .dshUS-pinMark{display:none}',
+      // The relative time is what the actions replace, so it goes away under
+      // exactly the conditions that bring the actions in — the host's session
+      // rows drop their time on hover for the same reason. With both gone the
+      // actions keep the row's trailing edge.
+      '.dshRS-row:hover .dshRS-time,',
+      '.dshRS-row:focus-visible .dshRS-time,',
+      '.dshRS-row:focus-within .dshRS-time,',
+      '.dshRS-menuOpen .dshRS-time{display:none}',
       // A touch surface never hovers, so the actions stay visible there and the
-      // time and marker stay hidden with them.
-      '@media (hover:none){.dshUS-actions{display:inline-flex}',
-      '.dshUS-time,.dshUS-pinMark{display:none}}',
+      // time stays hidden with them.
+      '@media (hover:none){.dshRS-actions{display:inline-flex}',
+      '.dshRS-time{display:none}}',
       // The plugin's settings popup, rebuilt on the host's own settings panel:
       // the 800px panel narrowed for a single page, the mask and elevation, the
       // 54px header with a 28px close, and the content's 24px inset. The page
       // itself holds the host's 36x20 switches beside one themed number field.
-      '.dshUS-settingsRoot{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;',
+      '.dshRS-settingsRoot{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;',
       'justify-content:center;padding:24px}',
-      '.dshUS-settingsMask{position:absolute;inset:var(--dsh-frame-chrome-top,0px) 0 0;',
+      '.dshRS-settingsMask{position:absolute;inset:var(--dsh-frame-chrome-top,0px) 0 0;',
       'background:var(--dsw-alias-bg-mask-1,rgba(0,0,0,.45));backdrop-filter:var(--dsw-mask-blur,blur(4px))}',
-      '.dshUS-settingsPanel{box-sizing:border-box;position:relative;z-index:1;display:flex;',
+      '.dshRS-settingsPanel{box-sizing:border-box;position:relative;z-index:1;display:flex;',
       'flex-direction:column;width:min(560px,100%);max-height:100%;overflow:hidden;',
       'border-radius:var(--dsw-radius-panel,var(--dsw-radius-lg,8px));',
       'background:var(--dsw-alias-bg-layer-2);',
       'box-shadow:var(--dsw-elevation-prominent,0 8px 32px rgba(0,0,0,.24));',
-      'animation:dshUS-dialogIn var(--ds-transition-duration,.15s) var(--ds-ease-in-out)}',
-      '.dshUS-settingsPanel:focus{outline:none}',
-      '.dshUS-settingsHeader{box-sizing:border-box;flex:none;display:flex;align-items:flex-start;',
+      'animation:dshRS-dialogIn var(--ds-transition-duration,.15s) var(--ds-ease-in-out)}',
+      '.dshRS-settingsPanel:focus{outline:none}',
+      '.dshRS-settingsHeader{box-sizing:border-box;flex:none;display:flex;align-items:flex-start;',
       'justify-content:space-between;gap:8px;height:54px;padding:20px 14px 8px 24px}',
-      '.dshUS-settingsTitle{margin:0;font-size:16px;line-height:24px;font-weight:500;',
+      '.dshRS-settingsTitle{margin:0;font-size:16px;line-height:24px;font-weight:500;',
       'color:var(--dsw-alias-label-primary)}',
-      '.dshUS-settingsHeader .dshUS-dialogClose{color:var(--dsw-alias-label-primary)}',
-      '.dshUS-settingsBody{flex:1;min-height:0;padding:0 24px 24px;overflow-y:auto;',
+      '.dshRS-settingsHeader .dshRS-dialogClose{color:var(--dsw-alias-label-primary)}',
+      '.dshRS-settingsBody{flex:1;min-height:0;padding:0 24px 24px;overflow-y:auto;',
       'overscroll-behavior:contain}',
-      '.dshUS-settingsRow{display:flex;align-items:center;justify-content:space-between;gap:24px;',
+      '.dshRS-settingsRow{display:flex;align-items:center;justify-content:space-between;gap:24px;',
       'padding:16px 0;border-bottom:.5px solid var(--dsw-alias-border-l2)}',
-      '.dshUS-settingsRow:last-child{border-bottom:none}',
-      '.dshUS-settingsCopy{min-width:0}',
-      '.dshUS-settingsRowTitle{font-size:14px;line-height:20px;color:var(--dsw-alias-label-primary)}',
-      '.dshUS-settingsRowDesc{margin-top:4px;font-size:12px;line-height:18px;',
+      '.dshRS-settingsRow:last-child{border-bottom:none}',
+      '.dshRS-settingsCopy{min-width:0}',
+      '.dshRS-settingsRowTitle{font-size:14px;line-height:20px;color:var(--dsw-alias-label-primary)}',
+      '.dshRS-settingsRowDesc{margin-top:4px;font-size:12px;line-height:18px;',
       'color:var(--dsw-alias-label-secondary)}',
       // The host's switch, copied from its primitives: a 36x20 track with a 16px
       // thumb that slides on the brand surface when checked.
-      '.dshUS-switch{box-sizing:border-box;position:relative;flex:none;width:36px;height:20px;',
+      '.dshRS-switch{box-sizing:border-box;position:relative;flex:none;width:36px;height:20px;',
       'padding:2px;border:0;border-radius:999px;corner-shape:round;',
       'background:var(--dsw-alias-border-l3);cursor:pointer}',
-      '.dshUS-switch[aria-checked="true"]{background:var(--dsw-alias-brand-primary)}',
-      '.dshUS-switch:disabled{cursor:not-allowed;opacity:.4}',
-      '.dshUS-switch:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid ',
+      '.dshRS-switch[aria-checked="true"]{background:var(--dsw-alias-brand-primary)}',
+      '.dshRS-switch:disabled{cursor:not-allowed;opacity:.4}',
+      '.dshRS-switch:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid ',
       'var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary,#4d6bfe));outline-offset:2px}',
-      '.dshUS-switchThumb{display:block;width:16px;height:16px;border-radius:50%;corner-shape:round;',
+      '.dshRS-switchThumb{display:block;width:16px;height:16px;border-radius:50%;corner-shape:round;',
       'background:var(--dsw-alias-label-primary-foreground);transition:transform .12s ease}',
-      '.dshUS-switch[aria-checked="false"] .dshUS-switchThumb{',
+      '.dshRS-switch[aria-checked="false"] .dshRS-switchThumb{',
       'background:var(--dsw-alias-switch-thumb)}',
-      '.dshUS-switch[aria-checked="true"] .dshUS-switchThumb{transform:translate(16px)}',
-      '@media (prefers-reduced-motion:reduce){.dshUS-switchThumb{transition:none}}',
+      '.dshRS-switch[aria-checked="true"] .dshRS-switchThumb{transform:translate(16px)}',
+      '@media (prefers-reduced-motion:reduce){.dshRS-switchThumb{transition:none}}',
       // Match the host's font-size stepper: a module surface with compact
       // arrows inside its right edge, revealed on hover or keyboard focus.
       // Center the value across the full field, independently of the arrows.
-      '.dshUS-numberField{position:relative;display:inline-flex;align-items:center;flex:none;',
+      '.dshRS-numberField{position:relative;display:inline-flex;align-items:center;flex:none;',
       'width:72px;height:36px;border-radius:var(--dsw-radius-md,8px);',
       'background:var(--dsw-alias-bg-module-platform)}',
-      '.dshUS-number{box-sizing:border-box;min-width:0;width:100%;height:100%;padding:0 8px;',
+      '.dshRS-number{box-sizing:border-box;min-width:0;width:100%;height:100%;padding:0 8px;',
       'border:0;border-radius:inherit;outline:none;',
       'background:transparent;color:var(--dsw-alias-label-primary);font:inherit;font-size:14px;',
       'line-height:22px;text-align:center;font-variant-numeric:tabular-nums;',
       '-moz-appearance:textfield;appearance:textfield}',
-      '.dshUS-numberField:focus-within{outline:var(--dsw-focus-ring-width,2px) solid ',
+      '.dshRS-numberField:focus-within{outline:var(--dsw-focus-ring-width,2px) solid ',
       'var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary,#4d6bfe));outline-offset:1px}',
-      '.dshUS-number::-webkit-outer-spin-button,',
-      '.dshUS-number::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}',
-      '.dshUS-stepper{position:absolute;right:8px;display:flex;flex-direction:column;gap:2px;opacity:0}',
-      '@media (hover:hover){.dshUS-numberField:hover .dshUS-stepper{opacity:1}}',
-      '.dshUS-numberField:focus-within .dshUS-stepper{opacity:1}',
-      '@media (hover:none){.dshUS-stepper{opacity:1}}',
-      '.dshUS-step{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;',
+      '.dshRS-number::-webkit-outer-spin-button,',
+      '.dshRS-number::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}',
+      '.dshRS-stepper{position:absolute;right:8px;display:flex;flex-direction:column;gap:2px;opacity:0}',
+      '@media (hover:hover){.dshRS-numberField:hover .dshRS-stepper{opacity:1}}',
+      '.dshRS-numberField:focus-within .dshRS-stepper{opacity:1}',
+      '@media (hover:none){.dshRS-stepper{opacity:1}}',
+      '.dshRS-step{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;',
       'width:17px;height:12px;padding:0;border:0;border-radius:var(--dsw-radius-xs,4px);',
       'background:color-mix(in srgb,var(--dsw-alias-bg-layer-1) 75%,transparent);',
       'color:var(--dsw-alias-label-primary);cursor:pointer}',
-      '@media (hover:hover){.dshUS-step:hover:not(:disabled){background:var(--dsw-alias-bg-layer-1)}}',
-      '.dshUS-step:disabled{color:var(--dsw-alias-label-caption);cursor:default}',
-      '.dshUS-step:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid ',
+      '@media (hover:hover){.dshRS-step:hover:not(:disabled){background:var(--dsw-alias-bg-layer-1)}}',
+      '.dshRS-step:disabled{color:var(--dsw-alias-label-caption);cursor:default}',
+      '.dshRS-step:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid ',
       'var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary,#4d6bfe));outline-offset:0}',
-      '.dshUS-stepGlyphUp{transform:rotate(180deg)}',
+      '.dshRS-stepGlyphUp{transform:rotate(180deg)}',
       // "Stop and archive" confirmation: the host's Modal geometry (380px panel,
       // layer-2 surface, 24px body inset) narrowed to the host's confirmation
       // width, all painted with theme tokens.
-      '.dshUS-dialogRoot{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;',
+      '.dshRS-dialogRoot{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;',
       'justify-content:center;padding:24px}',
-      '.dshUS-dialogMask{position:absolute;inset:0;background:var(--dsw-alias-bg-mask-1,rgba(0,0,0,.45))}',
-      '.dshUS-dialog{box-sizing:border-box;position:relative;z-index:1;display:flex;',
+      '.dshRS-dialogMask{position:absolute;inset:0;background:var(--dsw-alias-bg-mask-1,rgba(0,0,0,.45))}',
+      '.dshRS-dialog{box-sizing:border-box;position:relative;z-index:1;display:flex;',
       'flex-direction:column;gap:20px;width:min(440px,100%);max-height:100%;padding:0 0 24px;',
       'overflow:hidden;border-radius:var(--dsw-radius-lg,8px);background:var(--dsw-alias-bg-layer-2);',
       'box-shadow:var(--dsw-elevation-prominent,0 8px 32px rgba(0,0,0,.24));',
-      'animation:dshUS-dialogIn var(--ds-transition-duration,.15s) var(--ds-ease-in-out)}',
-      '@keyframes dshUS-dialogIn{0%{opacity:0}to{opacity:1}}',
-      '@media (prefers-reduced-motion:reduce){.dshUS-dialog,.dshUS-settingsPanel{animation:none}}',
-      '.dshUS-dialog:focus{outline:none}',
-      '.dshUS-dialogHeader{display:flex;align-items:center;justify-content:space-between;gap:8px;',
+      'animation:dshRS-dialogIn var(--ds-transition-duration,.15s) var(--ds-ease-in-out)}',
+      '@keyframes dshRS-dialogIn{0%{opacity:0}to{opacity:1}}',
+      '@media (prefers-reduced-motion:reduce){.dshRS-dialog,.dshRS-settingsPanel{animation:none}}',
+      '.dshRS-dialog:focus{outline:none}',
+      '.dshRS-dialogHeader{display:flex;align-items:center;justify-content:space-between;gap:8px;',
       'padding:22px 14px 12px 24px}',
-      '.dshUS-dialogTitle{margin:0;font-size:16px;line-height:24px;font-weight:500;',
+      '.dshRS-dialogTitle{margin:0;font-size:16px;line-height:24px;font-weight:500;',
       'color:var(--dsw-alias-label-primary)}',
-      '.dshUS-dialogClose{flex:none;display:inline-flex;align-items:center;justify-content:center;',
+      '.dshRS-dialogClose{flex:none;display:inline-flex;align-items:center;justify-content:center;',
       'width:28px;height:28px;border:0;border-radius:var(--dsw-radius-sm,4px);background:0 0;',
       'cursor:pointer;color:var(--dsw-alias-label-secondary)}',
-      '.dshUS-dialogClose:hover{background:var(--dsw-alias-interactive-bg-hover)}',
-      '.dshUS-dialogClose:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid ',
+      '.dshRS-dialogClose:hover{background:var(--dsw-alias-interactive-bg-hover)}',
+      '.dshRS-dialogClose:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid ',
       'var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary,#4d6bfe));outline-offset:1px}',
-      '.dshUS-dialogBody{display:flex;flex-direction:column;min-width:0;margin-top:12px;',
+      '.dshRS-dialogBody{display:flex;flex-direction:column;min-width:0;margin-top:12px;',
       'padding:0 24px;max-height:60vh;overflow-y:auto;overscroll-behavior:contain}',
-      '.dshUS-dialogDesc{margin:0;font-size:14px;line-height:22px;',
+      '.dshRS-dialogDesc{margin:0;font-size:14px;line-height:22px;',
       'color:var(--dsw-alias-label-primary)}',
-      '.dshUS-activity{color:var(--dsw-alias-label-primary);margin:0 0 8px;padding-left:18px;',
+      '.dshRS-activity{color:var(--dsw-alias-label-primary);margin:0 0 8px;padding-left:18px;',
       'font-size:13px;line-height:20px}',
-      '.dshUS-activity li{overflow-wrap:anywhere}',
-      '.dshUS-dialogStatus{color:var(--dsw-alias-label-secondary);font-size:12px;line-height:18px}',
-      '.dshUS-dialogError{color:var(--dsw-alias-state-error-primary);margin-top:8px;font-size:12px;',
+      '.dshRS-activity li{overflow-wrap:anywhere}',
+      '.dshRS-dialogStatus{color:var(--dsw-alias-label-secondary);font-size:12px;line-height:18px}',
+      '.dshRS-dialogError{color:var(--dsw-alias-state-error-primary);margin-top:8px;font-size:12px;',
       'line-height:18px}',
-      '.dshUS-dialogFooter{display:flex;align-items:center;justify-content:flex-end;gap:8px;',
+      '.dshRS-dialogFooter{display:flex;align-items:center;justify-content:flex-end;gap:8px;',
       'padding:0 24px}',
-      '.dshUS-button{box-sizing:border-box;display:inline-flex;align-items:center;',
+      '.dshRS-button{box-sizing:border-box;display:inline-flex;align-items:center;',
       'justify-content:center;gap:4px;height:36px;padding:0 14px;border:0;cursor:pointer;',
       'border-radius:var(--dsw-radius-md,8px);font:inherit;font-size:14px;line-height:22px;',
       'color:var(--dsw-alias-label-primary);background:transparent}',
-      '.dshUS-button:disabled{cursor:not-allowed;opacity:.4}',
-      '.dshUS-buttonOutline{border:.5px solid var(--dsw-alias-border-l3)}',
-      '.dshUS-buttonOutline:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}',
-      '.dshUS-settingsRestore{flex:none;white-space:nowrap}',
-      '.dshUS-settingsRestore:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid ',
+      '.dshRS-button:disabled{cursor:not-allowed;opacity:.4}',
+      '.dshRS-buttonOutline{border:.5px solid var(--dsw-alias-border-l3)}',
+      '.dshRS-buttonOutline:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}',
+      '.dshRS-settingsRestore{flex:none;white-space:nowrap}',
+      '.dshRS-settingsRestore:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid ',
       'var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary,#4d6bfe));outline-offset:1px}',
-      '.dshUS-buttonDanger:not(:disabled){color:var(--dsw-alias-state-error-primary)}',
+      '.dshRS-buttonDanger:not(:disabled){color:var(--dsw-alias-state-error-primary)}',
     ].join('');
-
-    /**
-     * The host's own pin glyph (the one the session rows use), copied verbatim
-     * so the section matches the sidebar without importing a Client package.
-     * @param props - square edge in pixels.
-     * @returns the filled pin icon.
-     */
-    function PinGlyph({ size }) {
-      return h(
-        'svg',
-        {
-          width: size,
-          height: size,
-          viewBox: '0 0 16 16',
-          fill: 'none',
-          xmlns: 'http://www.w3.org/2000/svg',
-          'aria-hidden': 'true',
-          strokeWidth: 1,
-        },
-        h('path', {
-          d: 'M9.96976 1.70572L13.1554 3.93629L10.9019 8.12317L11.5158 11.605L10.7192 12.7427L2.52767 7.00693L3.3243 5.86922L6.80612 5.25528L9.96976 1.70572Z',
-          fill: 'currentColor',
-          stroke: 'currentColor',
-          strokeLinejoin: 'round',
-        }),
-        h('path', {
-          d: 'M6.05285 9.47511C6.27284 9.16094 6.70586 9.08458 7.02003 9.30457C7.3342 9.52455 7.41055 9.95757 7.19057 10.2717L3.98587 14.4708L3.21223 13.9291L6.05285 9.47511Z',
-          fill: 'currentColor',
-        }),
-      );
-    }
 
     /**
      * The host's own archive glyph (a lidded box), copied verbatim so the row
@@ -672,7 +606,7 @@ window.__ModuleLoader__.load({
     function ChevronGlyph({ open }) {
       return h(
         'span',
-        { className: 'dshUS-arrow', 'data-open': open ? 'true' : 'false' },
+        { className: 'dshRS-arrow', 'data-open': open ? 'true' : 'false' },
         h(
           'svg',
           {
@@ -807,7 +741,7 @@ window.__ModuleLoader__.load({
     function StatusMark({ status, label }) {
       return h(
         'span',
-        { className: 'dshUS-status', title: label, 'aria-hidden': 'true' },
+        { className: 'dshRS-status', title: label, 'aria-hidden': 'true' },
         h(StatusGlyph, { status }),
       );
     }
@@ -821,12 +755,12 @@ window.__ModuleLoader__.load({
      */
     function StatusGlyph({ status }) {
       if (status.state !== 'ongoing') {
-        return h('span', { className: 'dshUS-dot', 'data-state': status.state });
+        return h('span', { className: 'dshRS-dot', 'data-state': status.state });
       }
       return h(
         'svg',
         {
-          className: 'dshUS-spinner',
+          className: 'dshRS-spinner',
           'data-state': 'ongoing',
           width: 14,
           height: 14,
@@ -835,9 +769,9 @@ window.__ModuleLoader__.load({
         },
         h(
           'g',
-          { className: 'dshUS-spinnerMotion' },
-          h('circle', { className: 'dshUS-spinnerTrack', cx: '12', cy: '12', r: '9.5' }),
-          h('circle', { className: 'dshUS-spinnerArc', cx: '12', cy: '12', r: '9.5' }),
+          { className: 'dshRS-spinnerMotion' },
+          h('circle', { className: 'dshRS-spinnerTrack', cx: '12', cy: '12', r: '9.5' }),
+          h('circle', { className: 'dshRS-spinnerArc', cx: '12', cy: '12', r: '9.5' }),
         ),
       );
     }
@@ -889,7 +823,7 @@ window.__ModuleLoader__.load({
      * grouped list needs only the Workspace itself, which is what the lookup
      * returns when no other registered path contains it.
      * @param workspaces - the sidebar's Workspace items, in list order.
-     * @param workspaceId - the Workspace that owns one pinned Session.
+     * @param workspaceId - the Workspace that owns one listed Session.
      * @returns the group ids to open, outermost first.
      */
     function workspaceChain(workspaces, workspaceId) {
@@ -1019,19 +953,19 @@ window.__ModuleLoader__.load({
     function highlightOriginalSession(row) {
       clearRevealHighlight();
       const cleanup = () => {
-        delete row.dataset.dshUpSessionReveal;
+        delete row.dataset.dshRecentSessionsReveal;
         row.removeEventListener('animationend', onEnd);
         clearRevealHighlight = () => {};
       };
       const onEnd = (event) => {
-        if (event.target === row && event.animationName === 'dshUS-revealOriginal') cleanup();
+        if (event.target === row && event.animationName === 'dshRS-revealOriginal') cleanup();
       };
       // Commit the attribute removal before adding it again, so repeating the menu
       // action on the same row starts a fresh three-second animation.
       void row.offsetWidth;
       row.addEventListener('animationend', onEnd);
       // React owns the host row's className, but leaves our data attribute alone.
-      row.dataset.dshUpSessionReveal = '';
+      row.dataset.dshRecentSessionsReveal = '';
       clearRevealHighlight = cleanup;
     }
 
@@ -1082,7 +1016,7 @@ window.__ModuleLoader__.load({
      * choice is either explicit or already the state the sidebar would keep.
      * @param workspaceId - the Workspace that owns the Session being opened.
      */
-    function pinCollapsedWorkspace(workspaceId) {
+    function holdCollapsedWorkspace(workspaceId) {
       if (workspaceId === undefined) return;
       const row = findWorkspaceRow(workspaceId);
       if (row === undefined || row.getAttribute('aria-expanded') !== 'false') return;
@@ -1159,9 +1093,9 @@ window.__ModuleLoader__.load({
     const HOVER_CARD_CLOSE_DELAY = 100;
     const HOVER_CARD_GAP = 8;
     /** localStorage key holding this plugin's browser-local preferences. */
-    const PREFERENCES_KEY = 'dsh-up-session/preferences.v1';
+    const PREFERENCES_KEY = 'dsh-recent-sessions/preferences.v1';
     /** localStorage key holding the Sessions the user removed from Recent. */
-    const MUTED_KEY = 'dsh-up-session/muted-from-recent.v1';
+    const MUTED_KEY = 'dsh-recent-sessions/muted-from-recent.v1';
 
     /**
      * The Sessions the user removed from Recent, keyed by Session id. Each value
@@ -1249,7 +1183,6 @@ window.__ModuleLoader__.load({
     function readPreferences() {
       const fallback = {
         expandWorkspaceOnOpen: true,
-        showPinned: true,
         showRecent: true,
         recentPageSize: RECENT_PAGE_DEFAULT,
         recentTimeFilterDays: RECENT_TIME_DEFAULT,
@@ -1348,50 +1281,11 @@ window.__ModuleLoader__.load({
     }
 
     /**
-     * The pinned section's rows: every pinned Session that is not archived,
-     * newest activity first. Ties keep the registry's order (most recently
-     * pinned first).
-     * @param pinnedSessionIds - the Host's pin set.
-     * @param archivedSessionIds - the Host's archive set.
-     * @param sessions - the Session-list snapshot.
-     * @param statuses - the Session-status snapshot.
-     * @param owners - Session id to the Workspace that accounts for it.
-     * @param loaded - whether the Workspace list has loaded at all.
-     * @param untitled - the label an untitled Session shows.
-     * @returns the rows in display order.
-     */
-    function pinnedRows(
-      pinnedSessionIds,
-      archivedSessionIds,
-      sessions,
-      statuses,
-      owners,
-      loaded,
-      untitled,
-    ) {
-      const archived = new Set(archivedSessionIds);
-      const rows = [];
-      for (const id of pinnedSessionIds) {
-        if (archived.has(id)) continue;
-        const summary = sessions.byId[id];
-        if (summary === undefined) continue;
-        rows.push(sessionRow(summary, owners.get(id), loaded, untitled, statuses, sessions));
-      }
-      // `updatedAt` is the Session-list activity stamp the Host advances on each
-      // user-authored durable message.
-      rows.sort((left, right) => right.updatedAt - left.updatedAt);
-      return rows;
-    }
-
-    /**
-     * The recent section's rows: every ordinary Session that is neither pinned
-     * nor archived, newest activity first. The pinned section already holds the
-     * pinned ones, so the two sections never show one conversation twice; the
-     * provisional New Session blank and subagent children stay out exactly as
-     * the sidebar hides them.
+     * The recent section's rows: every ordinary Session that is not archived,
+     * newest activity first. The provisional New Session blank and subagent
+     * children stay out exactly as the sidebar hides them.
      * @param sessions - the Session-list snapshot.
      * @param archivedSessionIds - the Host's archive set.
-     * @param pinnedSessionIds - the Host's pin set.
      * @param statuses - the Session-status snapshot.
      * @param owners - Session id to the Workspace that accounts for it.
      * @param loaded - whether the Workspace list has loaded at all.
@@ -1402,7 +1296,6 @@ window.__ModuleLoader__.load({
     function recentRows(
       sessions,
       archivedSessionIds,
-      pinnedSessionIds,
       statuses,
       owners,
       loaded,
@@ -1410,14 +1303,13 @@ window.__ModuleLoader__.load({
       muted,
     ) {
       const archived = new Set(archivedSessionIds);
-      const pinned = new Set(pinnedSessionIds);
       const removed = muted ?? {};
       const rows = [];
       for (const id of sessions.ids) {
         const summary = sessions.byId[id];
         if (summary === undefined) continue;
         if (summary.blank || summary.origin === 'subagent') continue;
-        if (archived.has(id) || pinned.has(id)) continue;
+        if (archived.has(id)) continue;
         // A Session the user removed from Recent stays out only while its
         // activity stamp has not advanced past the removal time. Any new
         // message pushes the stamp forward, which brings the Session back on
@@ -1432,11 +1324,10 @@ window.__ModuleLoader__.load({
     }
 
     /**
-     * The root of the plugin's sidebar surface: the pinned section, the recent
-     * section, their one shared hover card, and the one archive confirmation
-     * both sections can raise. It is rendered through a portal into the host
-     * node the plugin keeps at the top of the workspace list, inside the
-     * "Workspaces" section.
+     * The root of the plugin's sidebar surface: the recent section, its shared
+     * hover card, and the archive confirmation it can raise. It is rendered
+     * through a portal into the host node the plugin keeps at the top of the
+     * workspace list, inside the "Workspaces" section.
      * @param props - composed slot props plus the injected host and actions.
      * @returns the portal, or null when there is nowhere to portal into.
      */
@@ -1444,8 +1335,6 @@ window.__ModuleLoader__.load({
       const {
         host,
         open: openSession,
-        pin,
-        unpin,
         archive,
         stopAndArchive,
         t,
@@ -1457,7 +1346,6 @@ window.__ModuleLoader__.load({
         openMenu,
         useContextMenuTarget,
       } = props;
-      const pinnedSessionIds = useWorkspaces((state) => state.pinnedSessionIds);
       const archivedSessionIds = useWorkspaces((state) => state.archivedSessionIds);
       const workspaces = useWorkspaces((state) => state.items);
       const sessions = useSessions((state) => state);
@@ -1477,12 +1365,12 @@ window.__ModuleLoader__.load({
         : Object.values(sessions.byId).find((session) => (session.retainedBy?.mainView ?? 0) > 0)?.id;
       // The archive confirm request: `null` until the Host refuses an archive
       // because the Session still has running work. It lives at the root because
-      // the row that raised it may unmount (a sibling archive changes the pinned
-      // or recent set) while the question is still open.
+      // the row that raised it may unmount (a sibling archive changes the recent
+      // set) while the question is still open.
       const [archiveRequest, setArchiveRequest] = React.useState(null);
       // The plugin's own settings popup and the preferences it edits. Both
-      // live at the root so either section header can open the same popup and
-      // every row reads the same value; the choice is persisted on each click.
+      // live at the root so the section header can open the popup and every row
+      // reads the same value; the choice is persisted on each click.
       const [settingsOpen, setSettingsOpen] = React.useState(false);
       React.useEffect(() => {
         const openSettings = () => setSettingsOpen(true);
@@ -1490,7 +1378,7 @@ window.__ModuleLoader__.load({
         return () => settingsEvents.removeEventListener('open', openSettings);
       }, [settingsEvents]);
       const [preferences, setPreferences] = React.useState(readPreferences);
-      const { expandWorkspaceOnOpen, recentPageSize, recentTimeFilterDays, showPinned, showRecent } = preferences;
+      const { expandWorkspaceOnOpen, recentPageSize, recentTimeFilterDays, showRecent } = preferences;
       React.useEffect(() => writePreferences(preferences), [preferences]);
       // Sessions the user removed from Recent, keyed by id. The stored value is
       // the activity stamp at removal time and nothing else: no title, no
@@ -1579,15 +1467,15 @@ window.__ModuleLoader__.load({
       };
       // Opening a row first opens the Workspace that owns it, so the Session
       // the sidebar marks as current is actually on screen. The open call is
-      // unchanged, so the sections keep their own `dshUS-current` highlight and
+      // unchanged, so the sections keep their own `dshRS-current` highlight and
       // the sidebar keeps its native selected row. The reveal step is the one
-      // preference: with it off, the click only opens the Session and pins the
+      // preference: with it off, the click only opens the Session and holds the
       // group's current collapsed state so the sidebar's own current-Session
       // expansion cannot unfold it either.
       const openRow = (row) => {
         hideHover();
         if (expandWorkspaceOnOpen) expandWorkspacePath(workspaces, row.workspaceId);
-        else pinCollapsedWorkspace(row.workspaceId);
+        else holdCollapsedWorkspace(row.workspaceId);
         openSession(row.id);
       };
 
@@ -1601,32 +1489,18 @@ window.__ModuleLoader__.load({
 
       const loaded = workspaces.length > 0;
       const untitled = t('untitled');
-      const pinned = React.useMemo(
-        () =>
-          pinnedRows(
-            pinnedSessionIds,
-            archivedSessionIds,
-            sessions,
-            statuses,
-            owners,
-            loaded,
-            untitled,
-          ),
-        [pinnedSessionIds, archivedSessionIds, sessions, statuses, owners, loaded, untitled],
-      );
       const recentCandidates = React.useMemo(
         () =>
           recentRows(
             sessions,
             archivedSessionIds,
-            pinnedSessionIds,
             statuses,
             owners,
             loaded,
             untitled,
             muted,
           ),
-        [sessions, archivedSessionIds, pinnedSessionIds, statuses, owners, loaded, untitled, muted],
+        [sessions, archivedSessionIds, statuses, owners, loaded, untitled, muted],
       );
       // Use the same host subscriptions as the native sidebar. No clock,
       // focus, or visibility listener: any existing render rechecks all rows.
@@ -1660,19 +1534,16 @@ window.__ModuleLoader__.load({
       React.useEffect(() => {
         if (menuSessionId !== undefined || settingsOpen || archiveRequest !== null) hideHover();
       }, [menuSessionId, settingsOpen, archiveRequest, hideHover]);
-      // Resolve the card's Session from the current lists, so a status change or
+      // Resolve the card's Session from the current list, so a status change or
       // a Workspace assignment reaches the open card without reopening it.
       const hoveredRow = React.useMemo(() => {
         if (hoverCard === null) return undefined;
-        return (
-          pinned.find((row) => row.id === hoverCard.id) ??
-          recent.find((row) => row.id === hoverCard.id)
-        );
-      }, [hoverCard, pinned, recent]);
-      // The sidebar scrolls, and a row can disappear (unpinned into a collapsed
-      // section, archived, folded, or its whole section hidden) while its card is
-      // open. This check runs after every render because those unmounts happen
-      // inside the sections' own state, which the root never sees.
+        return recent.find((row) => row.id === hoverCard.id);
+      }, [hoverCard, recent]);
+      // The sidebar scrolls, and a row can disappear (archived, folded, hidden
+      // from Recent, or its whole section hidden) while its card is open. This
+      // check runs after every render because those unmounts happen inside the
+      // section's own state, which the root never sees.
       React.useEffect(() => {
         if (hoverCard === null) return;
         if (hoveredRow === undefined || !hoverCard.element.isConnected) hideHover();
@@ -1721,9 +1592,9 @@ window.__ModuleLoader__.load({
             })
           : null;
       // Removing a row from Recent only records its activity stamp: the
-      // Session, its Workspace, its pin and its history are untouched. The
-      // record stops applying the moment new activity advances that stamp, so
-      // the Session walks back into Recent on its own.
+      // Session, its Workspace and its history are untouched. The record stops
+      // applying the moment new activity advances that stamp, so the Session
+      // walks back into Recent on its own.
       const muteRow = (row) => {
         hideHover();
         setMuted((previous) => ({ ...previous, [row.id]: row.updatedAt }));
@@ -1750,16 +1621,10 @@ window.__ModuleLoader__.load({
       const body = h(
         React.Fragment,
         null,
-        showPinned && h(PinnedSection, {
-          ...shared,
-          rows: pinned,
-          onUnpin: (row) => unpin(row.id),
-        }),
         showRecent && h(RecentSection, {
           ...shared,
           rows: recent,
           pageSize: recentPageSize,
-          onPin: (row) => pin(row.id),
         }),
         settingsDialog,
         dialog,
@@ -1790,25 +1655,25 @@ window.__ModuleLoader__.load({
     }) {
       return h(
         'div',
-        { className: 'dshUS-headerRow' },
+        { className: 'dshRS-headerRow' },
         h(
           'button',
           {
             type: 'button',
-            className: 'dshUS-header',
+            className: 'dshRS-header',
             'aria-expanded': expanded,
             'aria-label': expanded ? collapseLabel : expandLabel,
             title: expanded ? collapseLabel : expandLabel,
             onClick: onToggle,
           },
-          h('span', { className: 'dshUS-label' }, label),
+          h('span', { className: 'dshRS-label' }, label),
           h(ChevronGlyph, { open: expanded }),
         ),
         h(
           'button',
           {
             type: 'button',
-            className: 'dshUS-settingsButton',
+            className: 'dshRS-settingsButton',
             'aria-label': settingsLabel,
             'aria-haspopup': 'dialog',
             'aria-expanded': settingsOpen,
@@ -1822,17 +1687,15 @@ window.__ModuleLoader__.load({
 
     /** The placeholder row a section shows while it holds no Session. */
     function EmptyRow({ label }) {
-      return h('div', { className: 'dshUS-empty' }, h('span', { className: 'dshUS-emptyLabel' }, label));
+      return h('div', { className: 'dshRS-empty' }, h('span', { className: 'dshRS-emptyLabel' }, label));
     }
 
     /**
      * One Session row: an optional leading status marker, the title, the
      * relative time, and the trailing actions that replace the time on hover or
-     * keyboard focus. A pinned row keeps the host's own pin marker where the
-     * time would end, so a pinned row looks pinned at rest exactly as the
-     * sidebar's rows do. Hovering the row starts the dwell that reveals the
-     * shared hover card; no native `title` tooltip competes with it.
-     * @param props - the row, the current Session id, the open handler, the host menu opener, the trailing buttons, the pin marker, the hover hooks, and the translator.
+     * keyboard focus. Hovering the row starts the dwell that reveals the shared
+     * hover card; no native `title` tooltip competes with it.
+     * @param props - the row, the current Session id, the open handler, the host menu opener, the trailing buttons, the hover hooks, and the translator.
      * @returns the row element.
      */
     function SessionRow({
@@ -1842,7 +1705,6 @@ window.__ModuleLoader__.load({
       onOpenMenu,
       menuOpen,
       actions,
-      pinned,
       onHoverStart,
       onHoverEnd,
       t,
@@ -1858,7 +1720,7 @@ window.__ModuleLoader__.load({
         if (event.currentTarget instanceof HTMLElement) event.currentTarget.focus({ preventScroll: true });
         onOpenMenu(row.id, row.menuTitle ?? '', point);
       };
-      const className = ['dshUS-row', row.id === currentId ? 'dshUS-current' : '', menuOpen ? 'dshUS-menuOpen' : '']
+      const className = ['dshRS-row', row.id === currentId ? 'dshRS-current' : '', menuOpen ? 'dshRS-menuOpen' : '']
         .filter(Boolean)
         .join(' ');
       return h(
@@ -1909,27 +1771,16 @@ window.__ModuleLoader__.load({
           },
         },
         row.status === undefined
-          ? h('span', { className: 'dshUS-status', 'aria-hidden': 'true' })
+          ? h('span', { className: 'dshRS-status', 'aria-hidden': 'true' })
           : h(StatusMark, { status: row.status, label: statusLabel }),
-        h('span', { className: 'dshUS-title' }, row.title),
-        h('span', { className: 'dshUS-time' }, relativeTime(row.updatedAt, now, t)),
-        pinned === true &&
-          h(
-            'span',
-            {
-              className: 'dshUS-pinMark',
-              role: 'img',
-              'aria-label': t('pinned'),
-              title: t('pinned'),
-            },
-            h(PinGlyph, { size: 14 }),
-          ),
+        h('span', { className: 'dshRS-title' }, row.title),
+        h('span', { className: 'dshRS-time' }, relativeTime(row.updatedAt, now, t)),
         // The trailing group swallows clicks, so a button press never also
         // opens the row (the host's rows do the same).
         h(
           'span',
           {
-            className: 'dshUS-actions',
+            className: 'dshRS-actions',
             onClick: (event) => {
               event.stopPropagation();
             },
@@ -1943,7 +1794,7 @@ window.__ModuleLoader__.load({
               {
                 key: action.key,
                 type: 'button',
-                className: 'dshUS-action',
+                className: 'dshRS-action',
                 'aria-label': action.label,
                 title: action.title,
                 onClick: action.onClick,
@@ -2005,24 +1856,24 @@ window.__ModuleLoader__.load({
           'div',
           {
             ref: node,
-            className: 'dshUS-hoverCard',
+            className: 'dshRS-hoverCard',
             role: 'tooltip',
             style: { left: placement.left, top: placement.top },
             onPointerEnter: onEnter,
             onPointerLeave: onLeave,
           },
-          h('div', { className: 'dshUS-hoverTitle' }, row.title),
+          h('div', { className: 'dshRS-hoverTitle' }, row.title),
           h('div', {
             className: workspaceMissing
-              ? 'dshUS-hoverWorkspace dshUS-hoverWorkspaceMissing'
-              : 'dshUS-hoverWorkspace',
+              ? 'dshRS-hoverWorkspace dshRS-hoverWorkspaceMissing'
+              : 'dshRS-hoverWorkspace',
           }, workspace),
-          row.cwd !== undefined && h('div', { className: 'dshUS-hoverPath' }, row.cwd),
-          time !== '' && h('div', { className: 'dshUS-hoverTime' }, time),
+          row.cwd !== undefined && h('div', { className: 'dshRS-hoverPath' }, row.cwd),
+          time !== '' && h('div', { className: 'dshRS-hoverTime' }, time),
           row.hoverStatuses.map((status) =>
             h(
               'div',
-              { className: 'dshUS-hoverStatus', key: `${status.label}-${status.count ?? ''}` },
+              { className: 'dshRS-hoverStatus', key: `${status.label}-${status.count ?? ''}` },
               h(StatusGlyph, { status }),
               h('span', null, statusText(status, t)),
             ),
@@ -2043,80 +1894,12 @@ window.__ModuleLoader__.load({
       };
     }
 
-    /**
-     * The pinned section: every pinned Session across all Workspaces, newest
-     * activity first. Its trailing action unpins, which is the one state the
-     * recent section never has to offer.
-     * @returns the section element.
-     */
-    function PinnedSection({
-      rows,
-      currentId,
-      onOpen,
-      onArchive,
-      onUnpin,
-      onOpenMenu,
-      menuSessionId,
-      onOpenSettings,
-      settingsOpen,
-      onHoverStart,
-      onHoverEnd,
-      t,
-    }) {
-      // Expanded by default; the choice lasts for this mount. Nothing is
-      // persisted, so a reload returns to the default and no stale collapse can
-      // hide the section without the user knowing why.
-      const [expanded, setExpanded] = React.useState(true);
-      const toggleExpanded = () => setExpanded((value) => !value);
-      return h(
-        'section',
-        { className: 'dshUS-root', 'aria-label': t('section') },
-        h(SectionHeader, {
-          label: t('section'),
-          expanded,
-          onToggle: toggleExpanded,
-          expandLabel: t('expand'),
-          collapseLabel: t('collapse'),
-          onOpenSettings,
-          settingsOpen,
-          settingsLabel: t('settings'),
-        }),
-        expanded &&
-          (rows.length === 0
-            ? h(EmptyRow, { label: t('empty') })
-            : rows.map((row) =>
-                h(SessionRow, {
-                  key: row.id,
-                  row,
-                  currentId,
-                  onOpen,
-                  onOpenMenu,
-                  menuOpen: menuSessionId === row.id,
-                  onHoverStart,
-                  onHoverEnd,
-                  t,
-                  // Every row here is pinned, so every row wears the marker.
-                  pinned: true,
-                  actions: [
-                    archiveAction(row, onArchive, t),
-                    {
-                      key: 'unpin',
-                      label: t('unpinNamed', { title: row.title }),
-                      title: t('unpin'),
-                      icon: h(PinGlyph, { size: 14 }),
-                      onClick: () => onUnpin(row),
-                    },
-                  ],
-                }),
-              )),
-      );
-    }
 
     /**
-     * The recent section: ordinary Sessions that are not pinned, newest
-     * activity first, revealed from a configurable rest size. The header
-     * collapses the whole section; the footer button reveals five more, and
-     * once every Session is on screen it folds the list back to its rest size.
+     * The recent section: ordinary Sessions, newest activity first, revealed
+     * from a configurable rest size. The header collapses the whole section; the
+     * footer button reveals five more, and once every Session is on screen it
+     * folds the list back to its rest size.
      * @param props - the rows, the configured page size, row callbacks, and the translator.
      * @returns the section element.
      */
@@ -2126,7 +1909,6 @@ window.__ModuleLoader__.load({
       currentId,
       onOpen,
       onArchive,
-      onPin,
       onMute,
       onOpenMenu,
       menuSessionId,
@@ -2152,7 +1934,7 @@ window.__ModuleLoader__.load({
               'button',
               {
                 type: 'button',
-                className: 'dshUS-more',
+                className: 'dshRS-more',
                 'aria-expanded': page.allShown,
                 title: page.allShown ? t('showLess') : t('showMore'),
                 onClick: () => setLimit(page.next),
@@ -2162,7 +1944,7 @@ window.__ModuleLoader__.load({
           : null;
       return h(
         'section',
-        { className: 'dshUS-root', 'aria-label': t('recent') },
+        { className: 'dshRS-root', 'aria-label': t('recent') },
         h(SectionHeader, {
           label: t('recent'),
           expanded,
@@ -2187,18 +1969,8 @@ window.__ModuleLoader__.load({
                   onHoverStart,
                   onHoverEnd,
                   t,
-                  // No row here is pinned, so no row wears the marker and the
-                  // time is the row's trailing cell, flush with its edge.
-                  pinned: false,
                   actions: [
                     archiveAction(row, onArchive, t),
-                    {
-                      key: 'pin',
-                      label: t('pinNamed', { title: row.title }),
-                      title: t('pin'),
-                      icon: h(PinGlyph, { size: 14 }),
-                      onClick: () => onPin(row),
-                    },
                     {
                       key: 'mute',
                       label: t('muteNamed', { title: row.title }),
@@ -2244,16 +2016,16 @@ window.__ModuleLoader__.load({
     function PluginSettingsEntry({ t, onOpenSettings }) {
       return h(
         'div',
-        { className: 'dshUS-settingsRow' },
+        { className: 'dshRS-settingsRow' },
         h(
           'div',
-          { className: 'dshUS-settingsCopy' },
-          h('div', { className: 'dshUS-settingsRowTitle' }, t('settingsTitle')),
-          h('div', { className: 'dshUS-settingsRowDesc' }, t('settingsEntryDesc')),
+          { className: 'dshRS-settingsCopy' },
+          h('div', { className: 'dshRS-settingsRowTitle' }, t('settingsTitle')),
+          h('div', { className: 'dshRS-settingsRowDesc' }, t('settingsEntryDesc')),
         ),
         h(
           'button',
-          { type: 'button', className: 'dshUS-button dshUS-buttonOutline', onClick: onOpenSettings },
+          { type: 'button', className: 'dshRS-button dshRS-buttonOutline', onClick: onOpenSettings },
           t('settingsOpen'),
         ),
       );
@@ -2276,7 +2048,7 @@ window.__ModuleLoader__.load({
           xmlns: 'http://www.w3.org/2000/svg',
           'aria-hidden': 'true',
           strokeWidth: 2,
-          className: direction === 'up' ? 'dshUS-stepGlyphUp' : undefined,
+          className: direction === 'up' ? 'dshRS-stepGlyphUp' : undefined,
         },
         h('path', {
           d: 'M4 6L7.29289 9.29289C7.68342 9.68342 8.31658 9.68342 8.70711 9.29289L12 6',
@@ -2330,9 +2102,9 @@ window.__ModuleLoader__.load({
       };
       return h(
         'div',
-        { className: 'dshUS-numberField' },
+        { className: 'dshRS-numberField' },
         h('input', {
-          className: 'dshUS-number',
+          className: 'dshRS-number',
           type: strictDays ? 'text' : 'number',
           inputMode: 'numeric',
           pattern: strictDays ? '[0-9]{1,2}' : undefined,
@@ -2354,12 +2126,12 @@ window.__ModuleLoader__.load({
         }),
         h(
           'span',
-          { className: 'dshUS-stepper' },
+          { className: 'dshRS-stepper' },
           h(
             'button',
             {
               type: 'button',
-              className: 'dshUS-step',
+              className: 'dshRS-step',
               'aria-label': increaseLabel,
               title: increaseLabel,
               disabled: current >= max,
@@ -2371,7 +2143,7 @@ window.__ModuleLoader__.load({
             'button',
             {
               type: 'button',
-              className: 'dshUS-step',
+              className: 'dshRS-step',
               'aria-label': decreaseLabel,
               title: decreaseLabel,
               disabled: current <= min,
@@ -2400,7 +2172,6 @@ window.__ModuleLoader__.load({
       const descriptionId = React.useId();
       const panel = React.useRef(null);
       const settings = [
-        { key: 'showPinned', label: 'settingsShowPinned', description: 'settingsShowPinnedDesc' },
         { key: 'showRecent', label: 'settingsShowRecent', description: 'settingsShowRecentDesc' },
         { key: 'expandWorkspaceOnOpen', label: 'settingsExpandWorkspace',
           description: 'settingsExpandWorkspaceDesc' },
@@ -2445,27 +2216,27 @@ window.__ModuleLoader__.load({
       return createPortal(
         h(
           'div',
-          { className: 'dshUS-settingsRoot', role: 'presentation' },
-          h('div', { className: 'dshUS-settingsMask', 'aria-hidden': 'true', onClick: onClose }),
+          { className: 'dshRS-settingsRoot', role: 'presentation' },
+          h('div', { className: 'dshRS-settingsMask', 'aria-hidden': 'true', onClick: onClose }),
           h(
             'div',
             {
               ref: panel,
               tabIndex: -1,
-              className: 'dshUS-settingsPanel',
+              className: 'dshRS-settingsPanel',
               role: 'dialog',
               'aria-modal': 'true',
               'aria-labelledby': titleId,
             },
             h(
               'div',
-              { className: 'dshUS-settingsHeader' },
-              h('h2', { className: 'dshUS-settingsTitle', id: titleId }, t('settingsTitle')),
+              { className: 'dshRS-settingsHeader' },
+              h('h2', { className: 'dshRS-settingsTitle', id: titleId }, t('settingsTitle')),
               h(
                 'button',
                 {
                   type: 'button',
-                  className: 'dshUS-dialogClose',
+                  className: 'dshRS-dialogClose',
                   'aria-label': t('settingsClose'),
                   title: t('settingsClose'),
                   onClick: onClose,
@@ -2475,17 +2246,17 @@ window.__ModuleLoader__.load({
             ),
             h(
               'div',
-              { className: 'dshUS-settingsBody' },
+              { className: 'dshRS-settingsBody' },
               ...settings.map((setting) => {
                 const copyId = descriptionId + setting.key;
                 return h(
                   'div',
-                  { className: 'dshUS-settingsRow', key: setting.key },
+                  { className: 'dshRS-settingsRow', key: setting.key },
                   h(
                     'div',
-                    { className: 'dshUS-settingsCopy' },
-                    h('div', { className: 'dshUS-settingsRowTitle' }, t(setting.label)),
-                    h('div', { className: 'dshUS-settingsRowDesc', id: copyId },
+                    { className: 'dshRS-settingsCopy' },
+                    h('div', { className: 'dshRS-settingsRowTitle' }, t(setting.label)),
+                    h('div', { className: 'dshRS-settingsRowDesc', id: copyId },
                       t(setting.description)),
                   ),
                   setting.control === 'number'
@@ -2505,26 +2276,26 @@ window.__ModuleLoader__.load({
                         {
                           type: 'button',
                           role: 'switch',
-                          className: 'dshUS-switch',
+                          className: 'dshRS-switch',
                           'aria-checked': preferences[setting.key],
                           'aria-label': t(setting.label),
                           'aria-describedby': copyId,
                           onClick: () => onChangePreference(setting.key, !preferences[setting.key]),
                         },
-                        h('span', { className: 'dshUS-switchThumb' }),
+                        h('span', { className: 'dshRS-switchThumb' }),
                       ),
                 );
               }),
               h(
                 'div',
-                { className: 'dshUS-settingsRow', key: 'mutedFromRecent' },
+                { className: 'dshRS-settingsRow', key: 'mutedFromRecent' },
                 h(
                   'div',
-                  { className: 'dshUS-settingsCopy' },
-                  h('div', { className: 'dshUS-settingsRowTitle' }, t('settingsMuted')),
+                  { className: 'dshRS-settingsCopy' },
+                  h('div', { className: 'dshRS-settingsRowTitle' }, t('settingsMuted')),
                   h(
                     'div',
-                    { className: 'dshUS-settingsRowDesc', id: descriptionId + 'muted' },
+                    { className: 'dshRS-settingsRowDesc', id: descriptionId + 'muted' },
                     mutedCount === 0
                       ? t('mutedNone')
                       : `${t('settingsMutedDesc')} ${t('mutedRestoreDesc')} ${t('mutedCount', { n: mutedCount })}`,
@@ -2536,7 +2307,7 @@ window.__ModuleLoader__.load({
                       'button',
                       {
                         type: 'button',
-                        className: 'dshUS-button dshUS-buttonOutline dshUS-settingsRestore',
+                        className: 'dshRS-button dshRS-buttonOutline dshRS-settingsRestore',
                         onClick: onRestoreMuted,
                       },
                       t('mutedRestore'),
@@ -2623,27 +2394,27 @@ window.__ModuleLoader__.load({
       };
       return h(
         'div',
-        { className: 'dshUS-dialogRoot', role: 'presentation' },
-        h('div', { className: 'dshUS-dialogMask', 'aria-hidden': 'true', onClick: close }),
+        { className: 'dshRS-dialogRoot', role: 'presentation' },
+        h('div', { className: 'dshRS-dialogMask', 'aria-hidden': 'true', onClick: close }),
         h(
           'div',
           {
             ref: dialog,
             tabIndex: -1,
-            className: 'dshUS-dialog',
+            className: 'dshRS-dialog',
             role: 'dialog',
             'aria-modal': 'true',
             'aria-label': t('archiveConfirm.title'),
           },
           h(
             'div',
-            { className: 'dshUS-dialogHeader' },
-            h('h2', { className: 'dshUS-dialogTitle' }, t('archiveConfirm.title')),
+            { className: 'dshRS-dialogHeader' },
+            h('h2', { className: 'dshRS-dialogTitle' }, t('archiveConfirm.title')),
             h(
               'button',
               {
                 type: 'button',
-                className: 'dshUS-dialogClose',
+                className: 'dshRS-dialogClose',
                 'aria-label': t('archiveConfirm.close'),
                 onClick: close,
               },
@@ -2652,15 +2423,15 @@ window.__ModuleLoader__.load({
           ),
           h(
             'div',
-            { className: 'dshUS-dialogBody' },
+            { className: 'dshRS-dialogBody' },
             h(
               'p',
-              { className: 'dshUS-dialogDesc' },
+              { className: 'dshRS-dialogDesc' },
               t('archiveConfirm.desc', { title: request.title }),
             ),
             h(
               'ul',
-              { className: 'dshUS-activity', 'aria-label': t('archiveConfirm.activity') },
+              { className: 'dshRS-activity', 'aria-label': t('archiveConfirm.activity') },
               request.activity.map((entry, index) =>
                 h('li', { key: `${entry.kind}-${String(index)}` }, activityLine(entry, t)),
               ),
@@ -2668,20 +2439,20 @@ window.__ModuleLoader__.load({
             archiving &&
               h(
                 'div',
-                { className: 'dshUS-dialogStatus', role: 'status' },
+                { className: 'dshRS-dialogStatus', role: 'status' },
                 t('archiveConfirm.pending'),
               ),
             error !== null &&
-              h('div', { className: 'dshUS-dialogError', role: 'alert' }, error),
+              h('div', { className: 'dshRS-dialogError', role: 'alert' }, error),
           ),
           h(
             'div',
-            { className: 'dshUS-dialogFooter' },
+            { className: 'dshRS-dialogFooter' },
             h(
               'button',
               {
                 type: 'button',
-                className: 'dshUS-button dshUS-buttonOutline',
+                className: 'dshRS-button dshRS-buttonOutline',
                 disabled: archiving,
                 onClick: close,
               },
@@ -2691,7 +2462,7 @@ window.__ModuleLoader__.load({
               'button',
               {
                 type: 'button',
-                className: 'dshUS-button dshUS-buttonOutline dshUS-buttonDanger',
+                className: 'dshRS-button dshRS-buttonOutline dshRS-buttonDanger',
                 disabled: archiving,
                 onClick: confirm,
               },
@@ -2704,18 +2475,18 @@ window.__ModuleLoader__.load({
 
     /** Insert the stylesheet once per plugin generation and remove it on unload. */
     function mountStyle(ctx) {
-      const tagId = 'dsh-up-session/PinnedSection.css';
+      const tagId = 'dsh-recent-sessions/RecentSessions.css';
       ctx.effect(() => {
         if (document.querySelector(`style[data-plugin-css="${tagId}"]`) !== null) return () => {};
         const tag = document.createElement('style');
-        tag.dataset.plugin = 'dsh-up-session';
+        tag.dataset.plugin = 'dsh-recent-sessions';
         tag.dataset.pluginCss = tagId;
         tag.textContent = CSS;
         document.head.appendChild(tag);
         return () => {
           tag.remove();
         };
-      }, 'up-session: stylesheet');
+      }, 'recent-sessions: stylesheet');
     }
 
     /**
@@ -2811,7 +2582,7 @@ window.__ModuleLoader__.load({
           seat.insertBefore(host, seat.firstChild);
         }
         // Search results replace the list's rows; the sections would otherwise
-        // sit above those results as unrelated pinned and recent rows.
+        // sit above those results as unrelated recent rows.
         const search = anchor.querySelector('input[type="text"]');
         host.dataset.searching =
           search instanceof HTMLInputElement && search.value.trim() !== '' ? 'true' : 'false';
@@ -2848,52 +2619,52 @@ window.__ModuleLoader__.load({
       };
     }
 
-    /** Contribute the pinned and recent sections inside the workspace list. */
+    /** Contribute the recent section inside the workspace list. */
     function apply(ctx) {
-      ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'up-session: dictionaries');
+      ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'recent-sessions: dictionaries');
       const t = ctx.locale.bind(NS);
       mountStyle(ctx);
 
       // The portal host is created with the plugin and removed by its effect, so
       // a reload never leaves an orphan node in the sidebar.
       const host = document.createElement('div');
-      host.dataset.dshUpSession = '';
-      host.className = 'dshUS-mount';
-      ctx.effect(() => mountHost(host), 'up-session: sidebar section host');
+      host.dataset.dshRecentSessions = '';
+      host.className = 'dshRS-mount';
+      ctx.effect(() => mountHost(host), 'recent-sessions: sidebar section host');
       // Both entry surfaces send requests to the single sidebar-owned dialog.
       const settingsEvents = new EventTarget();
 
       ctx.slots.inject('contextMenu.icon', () => ctx.slots.register({
         name: 'contextMenu.icon',
-        key: 'up-session.reveal-original',
+        key: 'recent-sessions.reveal-original',
       }, RevealOriginalGlyph));
 
       // Only menus opened from our sections carry this callback. Native rows
       // continue to use the host's menu without the extra action.
       ctx.effect(() => ctx.contextMenus.register({
-        id: 'up-session.reveal-original',
+        id: 'recent-sessions.reveal-original',
         target: 'session',
         order: 550, // After the host's file-manager action (500), before archive (600).
         observe: () => [ctx.locale],
         resolve: (target) => typeof target.revealOriginal === 'function' ? [{
           id: 'reveal-original',
           label: t('revealOriginal'),
-          icon: { key: 'up-session.reveal-original' },
+          icon: { key: 'recent-sessions.reveal-original' },
           run: target.revealOriginal,
         }] : [],
-      }), 'up-session: reveal original menu action');
+      }), 'recent-sessions: reveal original menu action');
       ctx.effect(() => () => {
         cancelAnimationFrame(revealFrame);
         for (const cancel of pendingWorkspaceExpansions) cancel();
         cancelRevealExpansion = () => {};
         clearRevealHighlight();
-      }, 'up-session: cancel pending reveal');
+      }, 'recent-sessions: cancel pending reveal');
 
       ctx.slots.inject('plugins.bundle.config', () =>
         ctx.slots.register(
           {
             name: 'plugins.bundle.config',
-            key: 'dsh-up-session',
+            key: 'dsh-recent-sessions',
             locale: NS,
             inject: () => ({ onOpenSettings: () => settingsEvents.dispatchEvent(new Event('open')) }),
           },
@@ -2906,18 +2677,6 @@ window.__ModuleLoader__.load({
         settingsEvents,
         open: (sessionId) => {
           ctx.uiWorkspace.openSession(sessionId);
-        },
-        // Pin and unpin go through the same hop the sidebar's own row actions
-        // use; a failure stays in the log, like an unpin failure always did.
-        pin: (sessionId) => {
-          ctx.uiWorkspace.pinSession(sessionId).catch((reason) => {
-            console.warn('session pin rejected:', reason);
-          });
-        },
-        unpin: (sessionId) => {
-          ctx.uiWorkspace.unpinSession(sessionId).catch((reason) => {
-            console.warn('session unpin rejected:', reason);
-          });
         },
         // Mirrors the sidebar's own archive action: try plainly first, and only
         // the Host's "still running" refusal (workspace/session-active, whose
@@ -2937,7 +2696,7 @@ window.__ModuleLoader__.load({
           }
         },
         stopAndArchive: (sessionId) => ctx.uiWorkspace.archiveSession(sessionId, { stopActivity: true }),
-        // The sidebar's own session menu (pin, rename, fork, copy id, Finder, archive).
+        // The sidebar's own session menu (rename, fork, copy id, Finder, archive).
         // Opening it here reuses every contribution registered for target "session".
         openMenu: (sessionId, displayTitle, point, revealOriginal) => {
           ctx.contextMenus.open(
@@ -2955,7 +2714,7 @@ window.__ModuleLoader__.load({
         ctx.slots.register(
           {
             name: 'shell.overlay',
-            id: 'dsh-up-session',
+            id: 'dsh-recent-sessions',
             locale: NS,
             inject: injected,
           },

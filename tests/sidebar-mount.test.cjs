@@ -69,8 +69,10 @@ function harness({ modern = true, search = false } = {}) {
   anchor.insertBefore(area, null);
   area.insertBefore(tree, null);
   const source = readFileSync(`${__dirname}/../client.js`, 'utf8');
-  const instrumented = source.replace('      inject,\n      apply,',
-    '      inject,\n      apply,\n      workspaceScrollBox, mountHost,');
+  const instrumented = source.replace(
+    / {6}inject,\r?\n {6}apply,/,
+    (match) => match.replace('      apply,', '      apply,\n      workspaceScrollBox, mountHost,'),
+  );
   assert.notEqual(source, instrumented);
   vm.runInNewContext(instrumented, {
     window: { __ModuleLoader__: { load(value) { definition = value; } } },

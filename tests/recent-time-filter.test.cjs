@@ -4,7 +4,7 @@ const { readFileSync } = require('node:fs');
 const vm = require('node:vm');
 
 const DAY = 86400000;
-const KEY = 'dsh-up-session/preferences.v1';
+const KEY = 'dsh-recent-sessions/preferences.v1';
 
 // Drive the shipped components with retained hook state and memo dependencies.
 // No production test exports or additional runtime dependencies are needed.
@@ -40,8 +40,11 @@ function harness() {
     useEffect() {},
   };
   const source = readFileSync(`${__dirname}/../client.js`, 'utf8');
-  const instrumented = source.replace('      inject,\n      apply,',
-    '      inject,\n      apply,\n      readPreferences, writePreferences, filterRecentByTime, recentRows, PreferenceNumberInput, SidebarSections, zh, en,');
+  const instrumented = source.replace(
+    / {6}inject,\r?\n {6}apply,/,
+    (match) => match.replace('      apply,',
+      '      apply,\n      readPreferences, writePreferences, filterRecentByTime, recentRows, PreferenceNumberInput, SidebarSections, zh, en,'),
+  );
   assert.notEqual(instrumented, source);
   vm.runInNewContext(instrumented, {
     window: { __ModuleLoader__: { load(value) { definition = value; } }, clearTimeout() {} },
@@ -86,7 +89,7 @@ test('defaults and older preferences use seven days; stored days must be integer
     assert.equal(preferences.recentTimeFilterDays, 7);
     assert.equal(preferences.recentPageSize, 12);
   }
-  const preferences = { ...plugin.readPreferences(), recentTimeFilterDays: 0, showPinned: false };
+  const preferences = { ...plugin.readPreferences(), recentTimeFilterDays: 0 };
   plugin.writePreferences(preferences);
   assert.deepEqual(JSON.parse(storage.get(KEY)), preferences);
   storage.set(KEY, '{broken');
@@ -112,15 +115,24 @@ test('the exact 24-hour boundary excludes seven-day sessions, with no status exe
 
 test('disabling time filtering or restoring hidden sessions does not bypass other inclusion rules', () => {
   const { plugin, now } = harness();
+  // "pinned" is listed first by its old name to prove the fork no longer reads
+  // the Host's pin set: a pinned session is an ordinary recent row now.
   const byId = Object.fromEntries(['old', 'pinned', 'archived', 'hidden', 'blank', 'child'].map((id) =>
     [id, { id, title: id, updatedAt: now() - 8 * DAY }]));
   byId.blank.blank = true;
   byId.child.origin = 'subagent';
   const sessions = { ids: Object.keys(byId), byId };
-  const candidates = (muted) => plugin.recentRows(sessions, ['archived'], ['pinned'], new Map(), new Map(), true, 'Untitled', muted);
-  assert.deepEqual(ids(plugin.filterRecentByTime(candidates({ hidden: now() }), 0, now())), ['old']);
+  const candidates = (muted) =>
+    plugin.recentRows(sessions, ['archived'], new Map(), new Map(), true, 'Untitled', muted);
+  assert.deepEqual(
+    ids(plugin.filterRecentByTime(candidates({ hidden: now() }), 0, now())),
+    ['old', 'pinned'],
+  );
   assert.deepEqual(ids(plugin.filterRecentByTime(candidates({}), 7, now())), []);
-  assert.deepEqual(ids(plugin.filterRecentByTime(candidates({}), 0, now())), ['hidden', 'old']);
+  assert.deepEqual(
+    ids(plugin.filterRecentByTime(candidates({}), 0, now())),
+    ['hidden', 'old', 'pinned'],
+  );
 });
 
 test('day input applies only on confirmation, rejects invalid drafts and steps within 0–99', () => {
