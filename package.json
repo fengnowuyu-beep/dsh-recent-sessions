@@ -1,6 +1,6 @@
 {
   "name": "dsh-recent-sessions",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Adds a collapsible Recent sessions group at the top of the workspace list in the DSH sidebar, with status marks, a hover card, its own settings, and the host session menu.",
   "license": "MIT",

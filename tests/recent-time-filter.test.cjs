@@ -43,7 +43,7 @@ function harness() {
   const instrumented = source.replace(
     / {6}inject,\r?\n {6}apply,/,
     (match) => match.replace('      apply,',
-      '      apply,\n      readPreferences, writePreferences, filterRecentByTime, recentRows, PreferenceNumberInput, SidebarSections, zh, en,'),
+      '      apply,\n      readPreferences, writePreferences, filterRecentByTime, recentRows, PreferenceNumberInput, RecentSection, SidebarSections, zh, en,'),
   );
   assert.notEqual(instrumented, source);
   vm.runInNewContext(instrumented, {
@@ -199,6 +199,50 @@ test('switching B/C rechecks idle A, and settings apply immediately even with ca
   assert.ok(ids(recent().props.rows).includes('A'), 'setting changes recheck memoized candidates');
   dialog.props.onChangePreference('recentTimeFilterDays', 7);
   assert.ok(!ids(recent().props.rows).includes('A'));
+});
+
+test('an expanded Recent list offers 收起 before every session is shown', () => {
+  const h = harness();
+  const rows = Array.from({ length: 12 }, (_, index) => ({
+    id: `s${index}`,
+    title: `S${index}`,
+    updatedAt: h.now() - index * 1000,
+  }));
+  const props = {
+    rows,
+    pageSize: 5,
+    currentId: undefined,
+    onOpen() {},
+    onArchive() {},
+    onMute() {},
+    onOpenMenu() {},
+    menuSessionId: undefined,
+    onOpenSettings() {},
+    settingsOpen: false,
+    onHoverStart() {},
+    onHoverEnd() {},
+    t: (key) => key,
+  };
+  const buttons = () => {
+    const found = [];
+    const walk = (node) => {
+      if (!node || typeof node !== 'object') return;
+      if (node.type === 'button') found.push(node);
+      for (const child of node.children ?? []) walk(child);
+    };
+    walk(h.render(h.plugin.RecentSection, props));
+    return found;
+  };
+  const button = (label) => buttons().find((node) => node.children.includes(label));
+  // At rest there is only "show more"; the fold control appears the moment the
+  // list grows past its rest size, not only once every session is on screen.
+  assert.equal(button('showLess'), undefined);
+  button('showMore').props.onClick();
+  assert.ok(button('showMore'), 'still 12 rows, so more can be shown');
+  assert.ok(button('showLess'), '收起 must be usable after the first expansion');
+  button('showLess').props.onClick();
+  assert.equal(button('showLess'), undefined);
+  assert.ok(button('showMore'));
 });
 
 test('Chinese and English settings dictionaries expose identical keys', () => {

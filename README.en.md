@@ -18,7 +18,7 @@ Enable the plugin on the Plugins page; a **Recent** group appears above the work
 ## Recent
 
 - Collects ordinary, unarchived sessions across **all workspaces** that are not hidden from Recent, newest first.
-- Shows the latest 5 by default. When more exist, **Show more** adds 5 per click and turns into **Show less** once everything is visible.
+- Shows the latest 5 by default. When more exist, **Show more** adds 5 per click. As soon as the list grows past the rest size, **Show less** appears on the right and folds it back to the rest size at any time; once everything is visible only **Show less** remains.
 - Rows carry the same status marks as the workspace list (running / waiting for you / just finished); idle rows reserve the same leading space.
 - Hovering a row opens a session card: full title, owning workspace, working directory, relative time, and current status.
 - Hovering shows **Archive** and **Hide from Recent**; right-click opens the host's own session menu (rename, fork, copy Session ID, show in file manager, pin, and so on — all provided by the host).

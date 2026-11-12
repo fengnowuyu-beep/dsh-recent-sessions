@@ -310,6 +310,14 @@ window.__ModuleLoader__.load({
       '.dshRS-emptyLabel{flex:1;min-width:0;margin:0 6px 0;overflow:hidden;',
       'text-overflow:ellipsis;white-space:nowrap;font-size:14px;line-height:20px;',
       'color:var(--dsw-alias-label-tertiary)}',
+      // The footer row holds both incremental controls: "展开更多" keeps its
+      // native left-aligned text position, "收起" sits at the row's right edge
+      // once the list has grown past its rest size.
+      '.dshRS-pager{box-sizing:border-box;display:flex;align-items:center;gap:8px;',
+      'padding-left:calc(var(--dsh-sidebar-row-padding,12px) + var(--dshRS-status-width) + ',
+      'var(--dsh-sidebar-label-gap,6px))}',
+      '.dshRS-pager .dshRS-more{width:auto;padding:0;flex:none}',
+      '.dshRS-pager .dshRS-fold{margin-left:auto}',
       // The host's own "Show more" row: one full-width 28px text button whose
       // label lines up with the Session titles above it.
       '.dshRS-more{box-sizing:border-box;display:block;width:100%;height:28px;margin:0;',
@@ -1898,8 +1906,9 @@ window.__ModuleLoader__.load({
     /**
      * The recent section: ordinary Sessions, newest activity first, revealed
      * from a configurable rest size. The header collapses the whole section; the
-     * footer button reveals five more, and once every Session is on screen it
-     * folds the list back to its rest size.
+     * footer row is the incremental control: "展开更多" reveals five more, and
+     * once the list has grown past its rest size a "收起" button folds it back
+     * to the configured rest size without waiting for every Session to be shown.
      * @param props - the rows, the configured page size, row callbacks, and the translator.
      * @returns the section element.
      */
@@ -1919,27 +1928,47 @@ window.__ModuleLoader__.load({
       t,
     }) {
       const [expanded, setExpanded] = React.useState(true);
-      // How many rows the list is allowed to show; the button below the list
-      // moves it by five, and no change to the Session set resets it, so a new
-      // message elsewhere never folds a list the user opened. A new rest size
-      // is a deliberate choice, so it does reset it.
+      // How many rows the list is allowed to show; "展开更多" moves it by five,
+      // "收起" puts it back to the rest size. No change to the Session set resets
+      // it, so a new message elsewhere never folds a list the user opened. A new
+      // rest size is a deliberate choice, so it does reset it.
       const [limit, setLimit] = React.useState(pageSize);
       React.useEffect(() => setLimit(pageSize), [pageSize]);
       const toggleExpanded = () => setExpanded((value) => !value);
       const page = recentWindow(rows.length, limit, pageSize);
       const visible = rows.slice(0, page.visible);
+      // Two independent controls once the list is past its rest size: keep
+      // revealing five at a time, and fold back at any point. Waiting for the
+      // whole list before offering "收起" left long lists with no way back.
+      const canRevealMore = rows.length > pageSize && !page.allShown;
+      const canFold = page.visible > pageSize;
       const pager =
         rows.length > pageSize
           ? h(
-              'button',
-              {
-                type: 'button',
-                className: 'dshRS-more',
-                'aria-expanded': page.allShown,
-                title: page.allShown ? t('showLess') : t('showMore'),
-                onClick: () => setLimit(page.next),
-              },
-              page.allShown ? t('showLess') : t('showMore'),
+              'div',
+              { className: 'dshRS-pager' },
+              canRevealMore &&
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'dshRS-more',
+                    title: t('showMore'),
+                    onClick: () => setLimit(page.next),
+                  },
+                  t('showMore'),
+                ),
+              canFold &&
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'dshRS-more dshRS-fold',
+                    title: t('showLess'),
+                    onClick: () => setLimit(pageSize),
+                  },
+                  t('showLess'),
+                ),
             )
           : null;
       return h(
