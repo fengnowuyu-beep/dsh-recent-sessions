@@ -3,6 +3,10 @@
   "version": "0.1.1",
   "type": "module",
   "description": "Adds a collapsible Recent sessions group at the top of the workspace list in the DSH sidebar, with status marks, a hover card, its own settings, and the host session menu.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fengnowuyu-beep/dsh-recent-sessions.git"
+  },
   "license": "MIT",
   "author": "customized from kyrsieger/dsh-up-session",
   "keywords": [
